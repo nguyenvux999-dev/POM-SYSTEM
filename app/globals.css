@@ -14,3 +14,18 @@ body {
 body {
   @apply bg-gray-50 text-gray-900 antialiased;
 }
+
+/* In / xuất PDF: ẩn điều hướng & các nút, nền trắng, bỏ padding thừa. */
+@media print {
+  header,
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+  }
+  main {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+}

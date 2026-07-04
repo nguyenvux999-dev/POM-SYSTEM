@@ -2,11 +2,21 @@ import type { ReactNode } from "react";
 import type {
   DoUuTien,
   DonHangTrangThai,
+  LichTrangThai,
+  LenhTrangThai,
+  MayTrangThai,
+  MucDo,
+  PhatSinhTrangThai,
   TrangThaiFile,
 } from "@/lib/domain/enums";
 import {
   NHAN_DO_UU_TIEN,
   NHAN_DON_HANG_TRANG_THAI,
+  NHAN_LENH_TRANG_THAI,
+  NHAN_LICH_TRANG_THAI,
+  NHAN_MAY_TRANG_THAI,
+  NHAN_MUC_DO,
+  NHAN_PHAT_SINH_TRANG_THAI,
   NHAN_TRANG_THAI_FILE,
 } from "@/lib/domain/labels";
 
@@ -60,6 +70,37 @@ const UU_TIEN_TONE: Record<DoUuTien, Tone> = {
   Gap: "red",
 };
 
+const LENH_TONE: Record<LenhTrangThai, Tone> = {
+  ChoLenLich: "gray",
+  DaLenLich: "blue",
+  DangChay: "amber",
+  HoanThanh: "green",
+};
+
+const LICH_TONE: Record<LichTrangThai, Tone> = {
+  ChoChay: "gray",
+  DangChay: "amber",
+  Xong: "green",
+};
+
+const MAY_TONE: Record<MayTrangThai, Tone> = {
+  HoatDong: "green",
+  BaoTri: "amber",
+  Hong: "red",
+};
+
+const PHAT_SINH_TONE: Record<PhatSinhTrangThai, Tone> = {
+  Moi: "amber",
+  DangXuLy: "blue",
+  DaXong: "green",
+};
+
+const MUC_DO_TONE: Record<MucDo, Tone> = {
+  Nhe: "gray",
+  TrungBinh: "amber",
+  NghiemTrong: "red",
+};
+
 export function BadgeDonHang({ value }: { value: DonHangTrangThai }) {
   return <Badge tone={DON_HANG_TONE[value]}>{NHAN_DON_HANG_TRANG_THAI[value]}</Badge>;
 }
@@ -70,4 +111,26 @@ export function BadgeFile({ value }: { value: TrangThaiFile }) {
 
 export function BadgeUuTien({ value }: { value: DoUuTien }) {
   return <Badge tone={UU_TIEN_TONE[value]}>{NHAN_DO_UU_TIEN[value]}</Badge>;
+}
+
+export function BadgeLenh({ value }: { value: LenhTrangThai }) {
+  return <Badge tone={LENH_TONE[value]}>{NHAN_LENH_TRANG_THAI[value]}</Badge>;
+}
+
+export function BadgeLich({ value }: { value: LichTrangThai }) {
+  return <Badge tone={LICH_TONE[value]}>{NHAN_LICH_TRANG_THAI[value]}</Badge>;
+}
+
+export function BadgeMay({ value }: { value: MayTrangThai }) {
+  return <Badge tone={MAY_TONE[value]}>{NHAN_MAY_TRANG_THAI[value]}</Badge>;
+}
+
+export function BadgePhatSinh({ value }: { value: PhatSinhTrangThai }) {
+  return (
+    <Badge tone={PHAT_SINH_TONE[value]}>{NHAN_PHAT_SINH_TRANG_THAI[value]}</Badge>
+  );
+}
+
+export function BadgeMucDo({ value }: { value: MucDo }) {
+  return <Badge tone={MUC_DO_TONE[value]}>{NHAN_MUC_DO[value]}</Badge>;
 }

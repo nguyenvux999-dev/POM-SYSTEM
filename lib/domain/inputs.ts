@@ -3,7 +3,7 @@
  * Không chứa các trường hệ thống (MaXxx, NguoiCapNhat, NgayCapNhat) — server tự set.
  */
 
-import type { DoUuTien } from "./enums";
+import type { DoUuTien, MucDo, PhatSinhLoai } from "./enums";
 
 /** Dữ liệu tạo đơn hàng mới (TrangThai luôn = "Moi", server set). */
 export interface DonHangInput {
@@ -29,4 +29,17 @@ export interface LenhDraftInput {
   CongDoanCanLam: string[];
   DoUuTien: DoUuTien;
   HanHoanThanh: string;
+}
+
+/**
+ * Dữ liệu ghi một phát sinh (server tự set MaPhatSinh, ThoiGian, TrangThai=Moi,
+ * NguoiCapNhat). MaLenh phải là lệnh đang tồn tại.
+ */
+export interface PhatSinhInput {
+  MaLenh: string;
+  Loai: PhatSinhLoai;
+  MoTa: string;
+  MucDo: MucDo;
+  AnhHuongTienDo: boolean;
+  HuongXuLy: string;
 }

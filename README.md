@@ -1,8 +1,11 @@
-# Quản lý Lệnh Sản xuất (In Offset) — Nền tảng (Pha 0)
+# Quản lý Lệnh Sản xuất (In Offset) — MVP hoàn chỉnh (Pha 0–4)
 
 Hệ thống hỗ trợ planner sắp xếp lệnh sản xuất cho xưởng in offset nhỏ.
-Đây là **phần móng (Pha 0)** — CHƯA có màn hình nghiệp vụ; chỉ có hạ tầng:
-Auth, tầng truy cập dữ liệu (Repository), cache, seed và khung điều hướng.
+**Đã hoàn thành đủ 6 giai đoạn nghiệp vụ** (xem bảng tổng kết ở mục N cuối file):
+Tiếp nhận đơn → Chế bản → Xếp lịch (Planning Board) → Tiến độ → Phát sinh & xếp lại → Báo cáo & archive.
+Nền tảng: Auth, tầng truy cập dữ liệu (Repository), cache, seed và khung điều hướng.
+
+> Hướng dẫn theo pha: **A–F** nền tảng (Pha 0) · **G–H** Pha 1 · **I–J** Pha 2 · **K–L** Pha 3 · **M–N** Pha 4.
 
 ## Ngăn xếp công nghệ
 
@@ -191,3 +194,155 @@ Sửa số ở đây (không sửa code) khi có số thật của xưởng:
 10. **Chưa có xóa** đơn/lệnh (BaseRepository không có `delete` ở giai đoạn này); chỉ tạo + cập nhật.
 11. **Thêm file mới trong Pha 1** (đều thuần, không kéo `server-only`): `lib/domain/{config,datetime,id,inputs,labels,estimate,feasibility,gate}.ts`, `components/status-badge.tsx`, cùng các `page.tsx`/`actions.ts`/component client dưới `app/don-hang` và `app/che-ban`.
 12. **Không làm ở Pha 1**: Planning Board/xếp lịch, tiến độ, phát sinh, báo cáo, optimistic locking, auto-scheduler, kho, đa người dùng — các route đó vẫn là placeholder.
+
+## I. Pha 2 — Xếp lịch & Tiến độ (cách dùng)
+
+Hiện thực **Giai đoạn 3 (Planning Board, desktop)** và **Giai đoạn 4 (Tiến độ, mobile)**.
+
+Luồng nghiệp vụ:
+
+1. **`/xep-lich` — Bảng xếp lịch** (tối ưu desktop, vẫn xem được trên mobile).
+   - **Panel "Lệnh chờ xếp"**: chỉ lệnh đã **Sẵn sàng** (`TrangThaiFile=SanSang`) và **Chờ lên lịch**, sắp theo **hạn** rồi **độ ưu tiên** (Gấp > Cao > Bình thường > Thấp). Mỗi thẻ báo trước **dự kiến trễ** nếu xếp bây giờ.
+   - **Xếp lệnh**: bấm **"Xếp lịch"** (tự chọn máy nhanh nhất mỗi công đoạn) hoặc **kéo-thả** thẻ vào cột máy (ép công đoạn khớp loại máy vào máy đó). Hệ thống tự tính `BatDauDuKien/KetThucDuKien` tuần tự các công đoạn, **không đè** job khác trên cùng máy, rồi chốt: lệnh → **Đã lên lịch**, đơn → **Đã lên lịch** (khi mọi lệnh của đơn đã xếp).
+   - **Board theo máy/ngày**: cột = máy, chọn ngày xem (◀ ▶ / hôm nay). Mỗi khối hiện mã lệnh, công đoạn, khung giờ, thứ tự.
+   - **3 trợ lý quyết định**: (1) tô **đỏ** lệnh `KetThuc > HanHoanThanh`; (2) **viền màu** nhận diện lệnh cùng số màu/khổ/giấy để xếp liền giảm make-ready; (3) **% tải** mỗi máy trong ngày + cảnh báo **dồn** ở công đoạn sau (Bế/Dán).
+   - **Lệnh đã xếp**: đổi máy từng công đoạn hoặc dời **mốc bắt đầu** rồi bấm **"Tính lại lịch"** (cập nhật tại chỗ, tính lại các công đoạn sau).
+2. **`/tien-do` — Dashboard & danh sách đang chạy** (mobile-first). Các lệnh **Đã lên lịch / Đang chạy**, kèm % hoàn thành theo công đoạn, công đoạn hiện tại, cờ **nguy cơ trễ**. Chạm một lệnh để mở màn cập nhật.
+3. **`/tien-do/[MaLenh]` — Cập nhật 3 chạm**: chọn **công đoạn** → chọn **trạng thái** (Bắt đầu chạy / Xong) → nhập **số lượng đạt** (nút "Đủ …") → **Lưu**. Mỗi lần lưu **append** một dòng `TienDo` và tự chuyển trạng thái: bắt đầu → `LichChay=DangChay`, `Lệnh=DangChay`, `Đơn=DangSanXuat`; xong hết công đoạn → `Lệnh=HoanThanh` (đơn `HoanThanh` khi mọi lệnh xong).
+
+### ⚠️ Giá trị cấu hình MỚI CẦN PLANNER XÁC NHẬN — `lib/domain/config.ts`
+
+| Hằng số | Mặc định tạm | Ý nghĩa |
+|---|---|---|
+| `GIO_BAT_DAU_LAM` | `"08:00"` | Giờ vào ca mỗi ngày (cửa sổ làm việc = `[GIO_BAT_DAU_LAM, +GIO_LAM_VIEC_MOI_NGAY giờ]`) |
+| `NGAY_NGHI` | `[]` | Ngày nghỉ cố định trong tuần (0=CN…6=T7); `[]` = chạy cả tuần. Vd nghỉ CN: `[0]` |
+| `GIO_LAM_VIEC_MOI_NGAY` | `8` | (đã có ở Pha 1) **xác nhận lại** — số giờ làm/ngày dùng để tính giãn lịch |
+
+> Năng suất/make-ready từng máy vẫn lấy từ tab `May` (chỉ sửa dữ liệu, không sửa code).
+
+### Giả định & giới hạn của mô hình xếp lịch (đã biết)
+
+- **Mỗi công đoạn chạy trên đúng 1 máy**; các công đoạn của một lệnh **phụ thuộc tuần tự** theo thứ tự `CongDoanCanLam` (In → Cán → Bế → Dán…).
+- **Chưa xét chia mẻ song song** (không tách một lệnh chạy song song trên nhiều máy).
+- Công đoạn **không có máy chuyên** (Đóng ghim/Ép kim/Khác) được ước tính thời lượng bằng `CONGDOAN_KHAC_*` nhưng **không gắn máy** (không chiếm cột máy nào trên board).
+- **Ngày/giờ tính theo wall-clock VN** lưu như UTC nội bộ (không chuyển múi giờ) → không lệch ngày dù server chạy UTC (Vercel). Vẫn lưu Sheets dạng chuỗi `YYYY-MM-DD HH:mm`.
+- **`ThuTu`** là ảnh chụp thứ hạng theo `BatDauDuKien` lúc ghi; board/danh sách luôn hiển thị theo thời gian nên `ThuTu` chỉ để tham khảo.
+- Vẫn **không có optimistic locking / auto-scheduler** (đúng phạm vi một-người-dùng, công cụ hỗ trợ quyết định).
+
+### Smoke test Pha 2 (sau `npm run dev`, cần đăng nhập; cần vài lệnh **Sẵn sàng** từ Pha 1)
+
+- [ ] Có ≥2 lệnh `SanSang` → `/xep-lich` panel "Lệnh chờ xếp" hiện đúng thứ tự hạn/ưu tiên.
+- [ ] Xếp một lệnh nhiều công đoạn (vd `In;CanMang;Be`) → sinh các `LichChay` giờ **tuần tự**, không đè job khác; board hiện đúng máy/thời gian.
+- [ ] Đặt hạn sát để xếp bị vượt → thấy **cảnh báo đỏ**; hai lệnh cùng khổ/màu → thấy **viền gom**.
+- [ ] Sau khi xếp → lệnh **Đã lên lịch**, đơn **Đã lên lịch**.
+- [ ] Trên điện thoại `/tien-do/[MaLenh]`: cập nhật "In → Xong (đủ số lượng)" → `TienDo` được append, dashboard đổi trạng thái; xong hết công đoạn → lệnh **Hoàn thành**.
+
+## J. Giả định Pha 2
+
+1. **Repo `May/LichChay/TienDo` nâng cấp thành class** (giữ singleton export): `May` thêm CRUD + `xoa` chặn khi còn `LichChay` tham chiếu + `findByLoai/nhanhNhatTheoLoai`; `LichChay` sinh `MaLich=LC-NNN`, validate FK + **gate SanSang**, `findByMay/Lenh/InRange`, `capNhatThuTuMay`; `TienDo` (vẫn append-only) thêm `findByLenh/generateMaLog(TD-NNN)/trangThaiHienTai`.
+2. **`BaseRepository` thêm `deleteByKey`** (batchUpdate `deleteDimension`, cần `getSheetId` trong `lib/sheets/client.ts`). `TienDo` **không** expose delete.
+3. **Xếp lịch = chốt lịch luôn** (2.5 + 2.9 gộp): tạo `LichChay` đồng thời đặt lệnh/đơn `DaLenLich`. "Xếp lại" cập nhật các dòng `LichChay` **tại chỗ** (không xóa/tạo lại) nên không cần `delete` ở luồng thường.
+4. **`estimate.ts` (Pha 1) và `schedule.ts` (Pha 2) tách vai trò**: `estimate` chỉ ước lượng tổng thời lượng cho kiểm tra khả thi; `schedule` mới là nơi giãn lịch theo giờ làm việc + mốc rảnh máy. `schedule.ts`/`assist.ts` là **hàm thuần**, chạy được cả client (board xem trước dự kiến trễ mà không gọi Sheets).
+5. **Optimistic UI**: bấm "Xếp lịch" ẩn thẻ khỏi panel chờ ngay, ghi nền, lỗi thì khôi phục + báo; sau thành công `router.refresh()` để đồng bộ.
+6. **Thêm file mới Pha 2**: `lib/domain/{schedule,assist}.ts`; mở rộng `lib/domain/{config,datetime,labels}.ts`, `components/status-badge.tsx`, `lib/repositories/{base,may,lichChay,tienDo}.ts`, `lib/sheets/client.ts`; các `page.tsx`/`actions.ts`/component client dưới `app/xep-lich` và `app/tien-do`.
+7. **Không làm ở Pha 2**: phát sinh & sắp-xếp-lại (Giai đoạn 5), báo cáo (Giai đoạn 6), auto-scheduler tối ưu, optimistic locking, kho, đa người dùng — `/phat-sinh`, `/bao-cao` vẫn placeholder.
+
+## K. Pha 3 — Phát sinh & sắp xếp lại (cách dùng)
+
+Hiện thực **Giai đoạn 5**: ghi sự cố → hệ thống tự chỉ ra lệnh/đơn bị ảnh hưởng → xếp lại nhanh (chỉ công đoạn chưa xong).
+
+Luồng nghiệp vụ:
+
+1. **`/phat-sinh/new` — Ghi phát sinh** (mobile-first; mở nhanh từ `/tien-do/[MaLenh]` qua nút *"⚠️ Ghi phát sinh"*, tự điền sẵn lệnh). Chọn **lệnh liên quan**, **loại** (Máy hỏng/Giấy trễ/Lệch màu/Đổi số lượng/Đơn gấp/Khác), **mức độ**, **ảnh hưởng tiến độ?** (Có/Không), mô tả, hướng xử lý. Nếu **Máy hỏng** → chọn máy + đặt `May.TrangThai` = Bảo trì/Hỏng. Lưu → `TrangThai=Mới`, `ThoiGian=bây giờ`.
+2. **`/phat-sinh` — Bảng "Cần xử lý"** gồm 4 khu vực:
+   - **Nguy cơ trễ**: mọi lệnh có công đoạn chưa xong nằm trên máy đang không hoạt động, kèm khách/hạn/**dự báo ngày xong mới**, sắp theo hạn gần nhất — "danh sách tác động tức thì".
+   - **Lệnh cần xếp lại** (suy ra động): mỗi lệnh hiển thị lý do (máy lỗi / phát sinh ảnh hưởng), **công đoạn đã Xong được giữ**, các công đoạn còn lại kèm **chọn máy (chỉ máy đang hoạt động)** + mốc bắt đầu; bấm **"Xếp lại"** → thay lịch chưa xong bằng lịch mới.
+   - **Trạng thái máy**: đổi nhanh Hoạt động/Bảo trì/Hỏng (dùng để **khôi phục** máy về Hoạt động sau sự cố).
+   - **Danh sách phát sinh**: lọc theo trạng thái/mức độ; đổi `Mới → Đang xử lý → Đã xong`.
+
+### ⚠️ Giá trị cấu hình MỚI CẦN PLANNER XÁC NHẬN — `lib/domain/config.ts`
+
+| Hằng số | Mặc định tạm | Ý nghĩa |
+|---|---|---|
+| `DE_DOA_TRE_NGAY` | `2` | Đơn/lệnh có hạn trong vòng N ngày kể từ hôm nay → coi là "nguy cơ trễ" khi có sự cố |
+
+### Smoke test Pha 3 (sau `npm run dev`, cần đăng nhập; cần vài lệnh đã xếp lịch từ Pha 2)
+
+- [ ] Ghi phát sinh `LechMau`, **Ảnh hưởng = Không** cho một lệnh → lưu OK, lệnh **KHÔNG** xuất hiện trong "Cần xếp lại".
+- [ ] Đặt `M03 = Hỏng` (hoặc ghi phát sinh `MayHong` chọn M03) → `/phat-sinh` liệt kê mọi lệnh còn dở trên M03 trong "Cần xếp lại" + bảng nguy cơ trễ.
+- [ ] Lệnh đã **In Xong** nhưng công đoạn sau kẹt máy hỏng → **"Xếp lại"** → chỉ công đoạn chưa xong chuyển sang máy Hoạt động khác, giờ tính lại tuần tự sau mốc In đã xong; **In giữ nguyên Xong**.
+- [ ] Đóng phát sinh (**Đã xong**) + đưa máy **về Hoạt động** → lệnh không còn trong "Cần xếp lại".
+
+## L. Giả định Pha 3
+
+1. **"Cần xếp lại" là trạng thái SUY RA động** (`lib/domain/reschedule.ts`), KHÔNG thêm giá trị enum `LenhSanXuat.TrangThai` và không lưu cột riêng. Điều kiện: (a) có `PhatSinh` `AnhHuongTienDo=TRUE` chưa `DaXong`, HOẶC (b) có `LichChay` chưa Xong nằm trên máy `May.TrangThai != HoatDong`.
+2. **Sự cố hỏng máy thể hiện qua `May.TrangThai`** (Bảo trì/Hỏng) — `PhatSinh` không có cột máy. Logic ảnh hưởng đọc `May.TrangThai` để tìm lệnh bị kẹt.
+3. **Chỉ xét lệnh đã có lịch & chưa Hoàn thành** cho "cần xếp lại" (lệnh chưa xếp thuộc luồng `/xep-lich` bình thường).
+4. **Xếp lại KHÔNG đụng công đoạn đã Xong**: `tinhLaiLichConLai` giữ nguyên dòng `Xong`, chỉ tính lại công đoạn chưa xong, bắt đầu sau mốc kết thúc của công đoạn Xong cuối cùng, **chỉ chọn máy đang HoatDong** (tái dùng `tinhLichChoLenh` của Pha 2).
+5. **Cơ chế thay lịch**: `xepLaiSuCo` **xóa** các `LichChay` chưa Xong (dùng `deleteByKey` của Pha 2) rồi **tạo** dòng mới — không transaction (đúng phạm vi một-người-dùng; nếu lỗi giữa chừng, planner chạy lại). Trạng thái lệnh/đơn không đổi khi xếp lại (chỉ dời công đoạn).
+6. **Giới hạn đã biết**: nếu loại công đoạn chỉ có **một** máy chuyên và máy đó hỏng, xếp lại sẽ để công đoạn ở trạng thái **không có máy** (`MaMay=""`) cho tới khi có máy hoạt động cùng loại — planner cần thêm/khôi phục máy. Dự báo "nguy cơ trễ" là thử nghiệm độc lập từng lệnh (không mô phỏng tranh chấp máy giữa nhiều lệnh cùng lúc).
+7. **Thêm file mới Pha 3**: `lib/domain/reschedule.ts`; mở rộng `lib/domain/{config,labels,inputs}.ts`, `components/status-badge.tsx`, `lib/repositories/phatSinh.ts`; các `page.tsx`/`actions.ts`/component client dưới `app/phat-sinh`.
+8. **Không làm ở Pha 3**: báo cáo (Giai đoạn 6), archive, optimistic locking, auto-scheduler, kho, đa người dùng — `/bao-cao` vẫn placeholder.
+
+## M. Pha 4 — Báo cáo & vận hành (cách dùng) · *hoàn tất MVP*
+
+Hiện thực **Giai đoạn 6**: mọi số liệu **suy ra realtime** từ các sheet (không lưu bảng báo cáo).
+
+`/bao-cao` là bảng điều hướng tới 4 báo cáo; mỗi báo cáo có **bộ lọc khoảng ngày dùng chung** (`components/date-range.tsx`, preset nhanh) và nút **Xuất Excel** (SheetJS, tải động) + **In / PDF** (`window.print()` + print stylesheet).
+
+1. **`/bao-cao/ngay` — Báo cáo ngày**: 3 nhóm cho ngày chọn — *đã xong* (lệnh/đơn có mốc hoàn thành suy từ `TienDo` rơi vào ngày) · *đang chạy* · *nguy cơ trễ* (máy hỏng — Pha 3, hoặc lịch vượt hạn — Pha 2) kèm **lý do** = phát sinh đang mở.
+2. **`/bao-cao/tai-may` — Tải máy tuần**: % tải mỗi máy = Σ phút bận (theo giờ làm việc) / phút khả dụng; **đánh dấu máy nghẽn** (≥ `NGUONG_NGHEN_MAY`).
+3. **`/bao-cao/dung-han` — Tỷ lệ đúng hạn tháng**: đơn hoàn thành trong tháng, đúng hạn nếu ngày hoàn thành ≤ `NgayGiaoHang`; đơn `TreHen` tính là trễ. Kèm danh sách đơn trễ + số ngày trễ.
+4. **`/bao-cao/phat-sinh` — Thống kê phát sinh**: xếp hạng loại sự cố hay gặp + phân bố mức độ + % ảnh hưởng tiến độ.
+
+**Mốc hoàn thành suy từ `TienDo`**: xong một công đoạn = `ThoiGian` của dòng `TienDo` mới nhất có `TrangThaiMoi="Xong"`; xong cả lệnh/đơn = khi mọi công đoạn/mọi lệnh đều có mốc Xong (lấy max).
+
+### ⚠️ Giá trị cấu hình MỚI CẦN PLANNER XÁC NHẬN — `lib/domain/config.ts`
+
+| Hằng số | Mặc định tạm | Ý nghĩa |
+|---|---|---|
+| `NGUONG_NGHEN_MAY` | `0.85` | Ngưỡng % tải để coi một máy là "nghẽn/cổ chai" |
+| `ARCHIVE_SAU_NGAY` | `30` | Chỉ archive đơn `HoanThanh` có ngày hoàn thành cũ hơn N ngày |
+
+### 4.7 — Archive theo tháng (`npm run archive`)
+
+Chuyển đơn `HoanThanh` **cũ** (mọi lệnh đã xong + hoàn thành cũ hơn `ARCHIVE_SAU_NGAY` ngày) sang các tab `Archive_YYYY_MM_<Entity>`, rồi xóa khỏi tab chính để sheet luôn nhẹ.
+
+```bash
+npm run archive             # DRY-RUN: chỉ liệt kê đơn đủ điều kiện, KHÔNG ghi/xóa
+npm run archive -- --apply  # CHẠY THẬT
+```
+
+> 🔒 **TRƯỚC KHI CHẠY THẬT**: bật **Lịch sử phiên bản** Google Sheets (File → Version history) và **export sao lưu** (File → Download → .xlsx). Archive có xóa dòng ở tab chính.
+
+An toàn: ghi archive **trước** (dedup theo khóa chính → idempotent), chỉ **xóa** dòng tab chính **sau khi** mọi lần ghi thành công; chạy lại không nhân đôi.
+
+### Smoke test Pha 4
+
+- [ ] `/bao-cao` → mở được 4 báo cáo; đổi khoảng ngày (preset) → số liệu cập nhật.
+- [ ] Báo cáo ngày (ngày có dữ liệu) hiển thị đúng 3 nhóm + lý do nguy cơ trễ.
+- [ ] Tải máy tuần chỉ ra máy nghẽn; đúng hạn tháng tính đúng %; thống kê phát sinh đếm đúng.
+- [ ] Bấm **Xuất Excel** → tải file `.xlsx` mở đúng nội dung; **In / PDF** → bản in gọn (ẩn nav/nút).
+- [ ] `npm run archive` (dry-run) liệt kê đúng đơn đủ điều kiện; `-- --apply` → chuyển sang `Archive_YYYY_MM_*`, tab chính bớt dòng, dữ liệu đang hoạt động không đổi.
+
+## N. Giả định Pha 4 & Tổng kết MVP
+
+**Giả định Pha 4:**
+1. **Báo cáo chỉ ĐỌC, suy ra realtime** (`lib/domain/report.ts` — hàm thuần); ngoại lệ ghi duy nhất là archive.
+2. **Tái sử dụng** `assist.tinhTaiMay` (tải máy), `reschedule.danhSachNguyCoTre` (máy hỏng), `assist.treHan` (lịch vượt hạn) — không viết lại logic.
+3. **Bộ lọc dùng chung** đẩy `from`/`to` lên URL (searchParams) → server component render lại; hỗ trợ mode `day`/`week`/`month`/`range`.
+4. **Xuất Excel bằng SheetJS** import ĐỘNG (chỉ tải khi bấm) → không phình bundle. Chỉ GHI file từ dữ liệu client (không parse file ngoài) nên các advisory của `xlsx` không áp dụng. **PDF** = in trình duyệt + print CSS (không thêm thư viện nặng).
+5. **Archive per-entity-per-month** (`Archive_{YYYY_MM}_{Entity}`) để giữ đúng header từng thực thể; dùng `deleteDimension` xóa từ dưới lên; không transaction (đúng phạm vi một-người-dùng).
+6. **Thêm file mới Pha 4**: `lib/domain/report.ts`, `lib/export/excel.ts`, `components/{date-range,export-button}.tsx`, `scripts/archive.ts`, các trang dưới `app/bao-cao/*`; mở rộng `lib/domain/{config,datetime}.ts`, `app/globals.css` (print), `package.json` (script `archive` + dep `xlsx`).
+
+**✅ Tổng kết — MVP hoàn chỉnh 6 giai đoạn:**
+
+| Pha | Giai đoạn | Trạng thái |
+|---|---|---|
+| 0 | Nền tảng (Auth, Repository, cache, seed) | ✅ |
+| 1 | Tiếp nhận đơn + Chế bản | ✅ |
+| 2 | Planning Board + Tiến độ | ✅ |
+| 3 | Phát sinh & sắp xếp lại | ✅ |
+| 4 | Báo cáo & archive | ✅ |
+
+**Hướng mở rộng tiếp theo (ngoài MVP, đã chừa khung sẵn):** auto-scheduler tối ưu; optimistic locking (thêm cột `Version`, kiểm trước khi ghi — đã chừa trong repository); tích hợp kho (giấy/mực); **đa người dùng/phân quyền** (đã có khung `NguoiDung` + cột `VaiTro`). Khi mở nhiều người cùng ghi → cân nhắc chuyển **Postgres (Supabase/Neon)**: nhờ Repository Pattern chỉ viết lại lớp trong `lib/repositories/*`, phần còn lại của app gần như không đổi.

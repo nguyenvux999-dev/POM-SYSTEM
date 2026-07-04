@@ -15,6 +15,7 @@
 import "server-only";
 import { getRows, invalidate, type SheetRow } from "@/lib/sheets/cache";
 import {
+  getSheetId,
   getSheetsClient,
   getSpreadsheetId,
   translateSheetsError,
@@ -195,5 +196,59 @@ export class BaseRepository<T extends object> {
 
     invalidate(this.config.tab);
     return merged;
+  }
+
+  /**
+   * Xóa bản ghi theo khóa chính (batchUpdate deleteDimension đúng dòng).
+   * Không tìm thấy khóa -> RepositoryError. Repo con quyết định có mở lối này ra
+   * hay không (vd TienDo append-only KHÔNG expose delete).
+   */
+  async deleteByKey(id: string): Promise<void> {
+    const rows = await getRows(this.config.tab);
+    const header = this.resolveHeader(rows);
+    const pk = this.config.primaryKey;
+    const pkIndex = header.indexOf(pk);
+    if (pkIndex < 0) {
+      throw new RepositoryError(
+        `Tab "${this.config.tab}" không có cột khóa chính "${pk}".`,
+      );
+    }
+    const dataRows = rows.slice(1);
+    const dataIndex = dataRows.findIndex(
+      (row) => String(row[pkIndex] ?? "") === String(id),
+    );
+    if (dataIndex < 0) {
+      throw new RepositoryError(
+        `Không tìm thấy bản ghi có ${pk}="${id}" trong tab "${this.config.tab}".`,
+      );
+    }
+
+    const sheetId = await getSheetId(this.config.tab);
+    // rows[0] = header (API index 0); dòng dữ liệu đầu tiên có API index 1.
+    const startIndex = dataIndex + 1;
+    const sheets = getSheetsClient();
+    try {
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: getSpreadsheetId(),
+        requestBody: {
+          requests: [
+            {
+              deleteDimension: {
+                range: {
+                  sheetId,
+                  dimension: "ROWS",
+                  startIndex,
+                  endIndex: startIndex + 1,
+                },
+              },
+            },
+          ],
+        },
+      });
+    } catch (err) {
+      throw translateSheetsError(err);
+    }
+
+    invalidate(this.config.tab);
   }
 }

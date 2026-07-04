@@ -5,6 +5,12 @@ import type {
   DoUuTien,
   DonHangTrangThai,
   LenhTrangThai,
+  LichTrangThai,
+  MayLoai,
+  MayTrangThai,
+  MucDo,
+  PhatSinhLoai,
+  PhatSinhTrangThai,
   TrangThaiFile,
 } from "./enums";
 
@@ -47,4 +53,45 @@ export const NHAN_CONG_DOAN: Record<CongDoan, string> = {
   DongGhim: "Đóng ghim",
   EpKim: "Ép kim",
   Khac: "Khác",
+};
+
+export const NHAN_LICH_TRANG_THAI: Record<LichTrangThai, string> = {
+  ChoChay: "Chờ chạy",
+  DangChay: "Đang chạy",
+  Xong: "Xong",
+};
+
+export const NHAN_MAY_LOAI: Record<MayLoai, string> = {
+  InOffset: "In offset",
+  CanMang: "Cán màng",
+  Be: "Bế",
+  Dan: "Dán",
+  Khac: "Khác",
+};
+
+export const NHAN_MAY_TRANG_THAI: Record<MayTrangThai, string> = {
+  HoatDong: "Hoạt động",
+  BaoTri: "Bảo trì",
+  Hong: "Hỏng",
+};
+
+export const NHAN_PHAT_SINH_LOAI: Record<PhatSinhLoai, string> = {
+  MayHong: "Máy hỏng",
+  GiayTre: "Giấy trễ",
+  LechMau: "Lệch màu",
+  DoiSoLuong: "Đổi số lượng",
+  DonGap: "Đơn gấp",
+  Khac: "Khác",
+};
+
+export const NHAN_MUC_DO: Record<MucDo, string> = {
+  Nhe: "Nhẹ",
+  TrungBinh: "Trung bình",
+  NghiemTrong: "Nghiêm trọng",
+};
+
+export const NHAN_PHAT_SINH_TRANG_THAI: Record<PhatSinhTrangThai, string> = {
+  Moi: "Mới",
+  DangXuLy: "Đang xử lý",
+  DaXong: "Đã xong",
 };

@@ -15,6 +15,7 @@ const SCOPES = ["https://www.googleapis.com/auth/spreadsheets"];
 
 let cachedClient: sheets_v4.Sheets | null = null;
 let cachedSpreadsheetId: string | null = null;
+let cachedSheetIds: Map<string, number> | null = null;
 
 /** Trả về Sheets client dùng chung (khởi tạo lần đầu, sau đó tái dùng). */
 export function getSheetsClient(): sheets_v4.Sheets {
@@ -37,6 +38,37 @@ export function getSpreadsheetId(): string {
   if (cachedSpreadsheetId) return cachedSpreadsheetId;
   cachedSpreadsheetId = getGoogleEnv().spreadsheetId;
   return cachedSpreadsheetId;
+}
+
+/**
+ * `sheetId` (gid) số của một tab theo tiêu đề — cần cho batchUpdate deleteDimension.
+ * Metadata sheet gần như không đổi nên cache cả bản đồ title→sheetId một lần.
+ */
+export async function getSheetId(title: string): Promise<number> {
+  if (!cachedSheetIds) {
+    const sheets = getSheetsClient();
+    try {
+      const meta = await sheets.spreadsheets.get({
+        spreadsheetId: getSpreadsheetId(),
+        fields: "sheets.properties(sheetId,title)",
+      });
+      const map = new Map<string, number>();
+      for (const s of meta.data.sheets ?? []) {
+        const p = s.properties;
+        if (p && typeof p.sheetId === "number" && p.title) {
+          map.set(p.title, p.sheetId);
+        }
+      }
+      cachedSheetIds = map;
+    } catch (err) {
+      throw translateSheetsError(err);
+    }
+  }
+  const id = cachedSheetIds.get(title);
+  if (id === undefined) {
+    throw new SheetsError(`Không tìm thấy tab "${title}" trong spreadsheet.`, 404);
+  }
+  return id;
 }
 
 /** Lỗi khi thao tác với Google Sheets — đã dịch sang thông báo dễ hiểu. */
@@ -111,4 +143,5 @@ export function translateSheetsError(err: unknown): SheetsError {
 export function __resetSheetsClientForTesting(): void {
   cachedClient = null;
   cachedSpreadsheetId = null;
+  cachedSheetIds = null;
 }
