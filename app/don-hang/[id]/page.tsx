@@ -4,6 +4,7 @@ import { donHangRepository } from "@/lib/repositories/donHang";
 import { lenhSanXuatRepository } from "@/lib/repositories/lenhSanXuat";
 import { coTheXepLich } from "@/lib/domain/gate";
 import { NHAN_CONG_DOAN, NHAN_LENH_TRANG_THAI } from "@/lib/domain/labels";
+import { BU_HAO_MAC_DINH_PHAN_TRAM } from "@/lib/domain/config";
 import type { CongDoan } from "@/lib/domain/enums";
 import {
   Badge,
@@ -11,6 +12,7 @@ import {
   BadgeFile,
   BadgeUuTien,
 } from "@/components/status-badge";
+import { MaLenhHienThi, ThongSoChips } from "@/components/lenh-specs";
 import { LenhManager } from "./lenh-manager";
 
 export const dynamic = "force-dynamic";
@@ -99,7 +101,7 @@ export default async function OrderDetailPage({
                 className="rounded-md border border-gray-200 p-3"
               >
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-mono text-sm">{l.MaLenh}</span>
+                  <MaLenhHienThi maLenh={l.MaLenh} maLSXXuong={l.MaLSXXuong} />
                   <BadgeFile value={l.TrangThaiFile} />
                   <BadgeUuTien value={l.DoUuTien} />
                   <Badge tone="gray">
@@ -110,6 +112,16 @@ export default async function OrderDetailPage({
                 {l.MoTaCongViec && (
                   <p className="mt-1 text-sm text-gray-600">{l.MoTaCongViec}</p>
                 )}
+                {/* Thông số kỹ thuật: số màu/loại giấy từ đơn; khổ giấy/khổ in/số trang từ lệnh. */}
+                <div className="mt-2">
+                  <ThongSoChips
+                    SoMau={don.SoMau}
+                    LoaiGiay={don.LoaiGiay}
+                    KhoGiay={l.KhoGiay}
+                    KhoIn={l.KhoIn}
+                    SoTrang={l.SoTrang}
+                  />
+                </div>
                 <div className="mt-2 flex flex-wrap gap-1">
                   {congDoanList(l.CongDoanCanLam).map((cd, i) => (
                     <span
@@ -120,11 +132,13 @@ export default async function OrderDetailPage({
                     </span>
                   ))}
                 </div>
-                {l.HanHoanThanh && (
-                  <p className="mt-1 text-xs text-gray-500">
-                    Hạn hoàn thành: {l.HanHoanThanh}
-                  </p>
-                )}
+                <p className="mt-1 text-xs text-gray-500">
+                  {l.HanHoanThanh && <>Hạn hoàn thành: {l.HanHoanThanh} · </>}
+                  Bù hao:{" "}
+                  {l.BuHaoPhanTram && l.BuHaoPhanTram > 0
+                    ? `${l.BuHaoPhanTram}%`
+                    : `${BU_HAO_MAC_DINH_PHAN_TRAM}% (mặc định)`}
+                </p>
               </div>
             ))}
           </div>

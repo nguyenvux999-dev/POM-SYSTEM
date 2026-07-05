@@ -21,6 +21,7 @@ import {
   CONGDOAN_MAY,
 } from "./config";
 import { addWorkingMinutes, formatLocal, parseLocal } from "./datetime";
+import { soLuongCanIn } from "./estimate";
 
 /** Tách chuỗi "In;CanMang;Be" → ["In","CanMang","Be"] (lọc rỗng). */
 export function parseCongDoan(raw: string): CongDoan[] {
@@ -133,6 +134,8 @@ export interface TinhLichParams {
   ganMay?: Partial<Record<CongDoan, string>>;
   /** Mốc sớm nhất planner muốn bắt đầu (tùy chọn). */
   mocBatDauMongMuon?: string;
+  /** % bù hao của lệnh; bỏ trống → dùng mặc định config. Cộng vào SoLuong trước khi tính. */
+  buHaoPhanTram?: number;
   /** "Bây giờ" (wall-clock) — server truyền xuống để client tính nhất quán. */
   now: Date;
 }
@@ -144,6 +147,8 @@ export interface TinhLichParams {
 export function tinhLichChoLenh(p: TinhLichParams): LichChayTinh[] {
   const ket: LichChayTinh[] = [];
   const mongMuon = p.mocBatDauMongMuon ? parseLocal(p.mocBatDauMongMuon) : null;
+  // Số lượng đã cộng bù hao — dùng cho MỌI công đoạn của lệnh.
+  const soLuongIn = soLuongCanIn(p.soLuong, p.buHaoPhanTram);
   // Bản làm việc: gồm lịch hiện có + các block vừa tính, để 2 công đoạn cùng lệnh
   // rơi trên CÙNG một máy cũng không đè nhau.
   const lichTam: LichChay[] = [...p.lichHienCo];
@@ -151,7 +156,7 @@ export function tinhLichChoLenh(p: TinhLichParams): LichChayTinh[] {
 
   for (const cd of p.congDoanCanLam) {
     const nl = nangLucChoCongDoan(cd, p.may, p.ganMay);
-    const phut = thoiLuongPhut(p.soLuong, nl);
+    const phut = thoiLuongPhut(soLuongIn, nl);
 
     const moc: number[] = [p.now.getTime()];
     const ranh = mocRanhMay(nl.maMay, lichTam);

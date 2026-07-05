@@ -125,6 +125,18 @@ npm run format    # Prettier
 Chi tiết cột: xem `lib/domain/columns.ts` (nguồn chân lý) và `lib/domain/types.ts`.
 Tab `00_HuongDan` (nếu có) được app **bỏ qua**.
 
+**Trường sản xuất bổ sung ở `LenhSanXuat`** (thêm vào CUỐI header — dòng dữ liệu cũ để trống vẫn đọc bình thường; `SoMau`/`LoaiGiay` KHÔNG lặp vì đã có ở `DonHang`, đọc qua join):
+
+| Cột mới | Kiểu | Ý nghĩa |
+|---|---|---|
+| `MaLSXXuong` | text (tùy chọn) | Mã lệnh theo định dạng xưởng, vd `OS-25SL3101-30062026-3`. Bỏ trống → dùng `MaLenh` hệ thống. Hiển thị làm **mã chính**, kèm `MaLenh` nhỏ màu xám. |
+| `SoTrang` | number (tùy chọn) | Số trang (sản phẩm sách); 0/trống = không áp dụng. |
+| `KhoGiay` | text | Khổ giấy, vd `700x965mm`. |
+| `KhoIn` | text | Khổ in, vd `700x475mm`. |
+| `BuHaoPhanTram` | number | % bù hao; trống/0 → dùng `BU_HAO_MAC_DINH_PHAN_TRAM`. |
+
+> `npm run seed` sẽ **tự thêm các cột còn thiếu** vào cuối header của tab đang có (idempotent, không mất dữ liệu). Chạy lại seed sau khi cập nhật mã.
+
 ---
 
 ## F. Giả định đã đặt ra khi làm Pha 0
@@ -165,11 +177,13 @@ Sửa số ở đây (không sửa code) khi có số thật của xưởng:
 | `CONGDOAN_KHAC_MAKEREADY_PHUT` | `30` | Make-ready (phút) cho công đoạn không có máy chuyên (DongGhim/EpKim/Khac) |
 | `CONGDOAN_KHAC_NANGSUAT` | `5000` | Năng suất giả định (tờ/giờ) cho công đoạn không có máy chuyên |
 | `CONGDOAN_MAY` | map In→InOffset, CanMang→CanMang, Be→Be, Dan→Dan | Ánh xạ công đoạn → loại máy để lấy năng suất |
+| `BU_HAO_MAC_DINH_PHAN_TRAM` | `3` | % bù hao mặc định khi lệnh **không** nhập `BuHaoPhanTram` riêng — cộng vào số lượng khi tính thời lượng ở mọi nơi (ước tính, khả thi, xếp lịch, xếp lại) |
 
 > Năng suất/make-ready của **công đoạn có máy chuyên** lấy từ **máy nhanh nhất đang hoạt động** trong tab `May` (chỉ sửa dữ liệu tab May, không sửa code).
 
 **Công thức** (xem `lib/domain/estimate.ts`, `feasibility.ts`):
-`thoiLuongPhut = makeReady + (SoLuong / NangSuat) × 60`; đơn khả thi khi `soNgayConLai ≥ soNgaySanXuat + đệm chế bản + đệm đóng gói`.
+`SoLuongCanIn = SoLuong × (1 + BuHaoPhanTram/100)` (bù hao lấy từ lệnh, trống/0 → `BU_HAO_MAC_DINH_PHAN_TRAM`);
+`thoiLuongPhut = makeReady + (SoLuongCanIn / NangSuat) × 60`; đơn khả thi khi `soNgayConLai ≥ soNgaySanXuat + đệm chế bản + đệm đóng gói`.
 
 ### Smoke test Pha 1 (chạy sau `npm run dev`, cần đăng nhập)
 

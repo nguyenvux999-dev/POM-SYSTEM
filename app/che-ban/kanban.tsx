@@ -9,6 +9,7 @@ import {
 import { NHAN_TRANG_THAI_FILE } from "@/lib/domain/labels";
 import { coTheXepLich } from "@/lib/domain/gate";
 import { BadgeUuTien } from "@/components/status-badge";
+import { MaLenhHienThi, ThongSoChips } from "@/components/lenh-specs";
 import { capNhatTrangThaiFile } from "./actions";
 
 export interface TheLenh {
@@ -19,6 +20,12 @@ export interface TheLenh {
   TenSanPham: string;
   KhachHang: string;
   HanHoanThanh: string;
+  MaLSXXuong: string;
+  SoMau: string;
+  LoaiGiay: string;
+  KhoGiay: string;
+  KhoIn: string;
+  SoTrang: number;
 }
 
 export function Kanban({ cards: initial }: { cards: TheLenh[] }) {
@@ -93,13 +100,26 @@ export function Kanban({ cards: initial }: { cards: TheLenh[] }) {
                     className="cursor-grab rounded-md border border-gray-200 bg-white p-3 shadow-sm active:cursor-grabbing"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-mono text-xs">{c.MaLenh}</span>
+                      <MaLenhHienThi
+                        maLenh={c.MaLenh}
+                        maLSXXuong={c.MaLSXXuong}
+                        size="xs"
+                      />
                       <BadgeUuTien value={c.DoUuTien} />
                     </div>
                     <p className="mt-1 text-sm font-medium text-gray-900">
                       {c.TenSanPham || "—"}
                     </p>
                     <p className="text-xs text-gray-500">{c.KhachHang}</p>
+                    <div className="mt-1">
+                      <ThongSoChips
+                        SoMau={c.SoMau}
+                        LoaiGiay={c.LoaiGiay}
+                        KhoGiay={c.KhoGiay}
+                        KhoIn={c.KhoIn}
+                        SoTrang={c.SoTrang}
+                      />
+                    </div>
                     {c.HanHoanThanh && (
                       <p className="mt-1 text-xs text-gray-500">
                         Hạn: {c.HanHoanThanh}

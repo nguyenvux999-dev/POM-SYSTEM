@@ -23,12 +23,18 @@ export interface DonHangInput {
 /**
  * Dữ liệu một lệnh sản xuất khi tạo từ chi tiết đơn.
  * `CongDoanCanLam` là MẢNG ở tầng UI; repo sẽ nối bằng ";" khi lưu.
+ * Các trường sản xuất bổ sung đều TÙY CHỌN (SoMau/LoaiGiay đọc từ DonHang, không nhập ở đây).
  */
 export interface LenhDraftInput {
   MoTaCongViec: string;
   CongDoanCanLam: string[];
   DoUuTien: DoUuTien;
   HanHoanThanh: string;
+  MaLSXXuong?: string;
+  SoTrang?: number;
+  KhoGiay?: string;
+  KhoIn?: string;
+  BuHaoPhanTram?: number;
 }
 
 /**

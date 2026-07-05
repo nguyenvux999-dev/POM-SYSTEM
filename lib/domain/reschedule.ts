@@ -137,6 +137,8 @@ export interface TinhLaiParams {
   lichHienCoKhac: LichChay[];
   ganMay?: Partial<Record<CongDoan, string>>;
   mocBatDauMongMuon?: string;
+  /** % bù hao của lệnh; bỏ trống → dùng mặc định config. */
+  buHaoPhanTram?: number;
   now: Date;
 }
 
@@ -179,6 +181,7 @@ export function tinhLaiLichConLai(p: TinhLaiParams): KetQuaXepLai {
           lichHienCo: p.lichHienCoKhac,
           ganMay: p.ganMay,
           mocBatDauMongMuon: floorMoc || undefined,
+          buHaoPhanTram: p.buHaoPhanTram,
           now: p.now,
         })
       : [];
@@ -202,6 +205,7 @@ export function tinhLaiLichConLai(p: TinhLaiParams): KetQuaXepLai {
 
 export interface NguyCoTreItem {
   MaLenh: string;
+  MaLSXXuong: string;
   MaDon: string;
   TenSanPham: string;
   KhachHang: string;
@@ -250,6 +254,7 @@ export function danhSachNguyCoTre(params: {
       lichCuaLenh,
       may: mayList,
       lichHienCoKhac: lichAll.filter((l) => l.MaLenh !== lenh.MaLenh),
+      buHaoPhanTram: lenh.BuHaoPhanTram,
       now,
     });
 
@@ -261,6 +266,7 @@ export function danhSachNguyCoTre(params: {
 
     out.push({
       MaLenh: lenh.MaLenh,
+      MaLSXXuong: lenh.MaLSXXuong ?? "",
       MaDon: lenh.MaDon,
       TenSanPham: don?.TenSanPham ?? "",
       KhachHang: don?.KhachHang ?? "",

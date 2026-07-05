@@ -31,6 +31,14 @@ export const CONGDOAN_KHAC_MAKEREADY_PHUT = 30;
 /** ⚠️ CẦN PLANNER XÁC NHẬN — năng suất giả định (tờ/giờ) cho công đoạn không có máy chuyên. */
 export const CONGDOAN_KHAC_NANGSUAT = 5000;
 
+/**
+ * ⚠️ CẦN PLANNER XÁC NHẬN — % bù hao mặc định khi lệnh KHÔNG nhập riêng.
+ * Dùng để cộng vào số lượng khi tính thời lượng công đoạn:
+ *   SoLuongCanIn = SoLuong × (1 + BuHaoPhanTram/100)
+ * Lệnh có `BuHaoPhanTram` riêng (> 0) sẽ dùng số đó; bỏ trống/0 → dùng hằng số này.
+ */
+export const BU_HAO_MAC_DINH_PHAN_TRAM = 3;
+
 // ---------------------------------------------------------------------------
 // Tham số xếp lịch (dùng ở lib/domain/datetime.ts + schedule.ts)
 // ---------------------------------------------------------------------------

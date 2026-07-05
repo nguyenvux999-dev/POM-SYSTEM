@@ -26,6 +26,7 @@ import {
   BadgeMucDo,
   BadgePhatSinh,
 } from "@/components/status-badge";
+import { MaLenhHienThi } from "@/components/lenh-specs";
 import {
   capNhatTrangThaiMay,
   doiTrangThaiPhatSinh,
@@ -35,6 +36,7 @@ import {
 export interface PhatSinhVM {
   MaPhatSinh: string;
   MaLenh: string;
+  MaLSXXuong: string;
   Loai: PhatSinhLoai;
   MoTa: string;
   MucDo: MucDo;
@@ -48,11 +50,13 @@ export interface PhatSinhVM {
 
 export interface CanXepLaiVM {
   MaLenh: string;
+  MaLSXXuong: string;
   TenSanPham: string;
   KhachHang: string;
   HanHoanThanh: string;
   CongDoanCanLam: string;
   SoLuong: number;
+  BuHaoPhanTram: number;
   boiPhatSinh: boolean;
   boiMayLoi: boolean;
   congDoanBiKet: { CongDoan: CongDoan; tenMay: string; mayTrangThai: MayTrangThai }[];
@@ -124,7 +128,13 @@ export function PhatSinhBoard({
               <tbody className="divide-y divide-red-100">
                 {nguyCoTre.map((n) => (
                   <tr key={n.MaLenh}>
-                    <td className="px-2 py-1 font-mono">{n.MaLenh}</td>
+                    <td className="px-2 py-1">
+                      <MaLenhHienThi
+                        maLenh={n.MaLenh}
+                        maLSXXuong={n.MaLSXXuong}
+                        size="xs"
+                      />
+                    </td>
                     <td className="px-2 py-1">
                       {n.TenSanPham}
                       <span className="text-xs text-gray-400"> · {n.KhachHang}</span>
@@ -267,6 +277,7 @@ function XepLaiRow({
         lichHienCoKhac: lichKhac,
         ganMay: gan,
         mocBatDauMongMuon: moc ? moc.replace("T", " ") : undefined,
+        buHaoPhanTram: item.BuHaoPhanTram,
         now: parseLocal(now),
       }),
     [item, lichCuaLenh, lichKhac, may, gan, moc, now],
@@ -281,7 +292,7 @@ function XepLaiRow({
       }`}
     >
       <div className="flex flex-wrap items-center gap-2">
-        <span className="font-mono text-sm">{item.MaLenh}</span>
+        <MaLenhHienThi maLenh={item.MaLenh} maLSXXuong={item.MaLSXXuong} />
         <span className="text-sm text-gray-700">{item.TenSanPham}</span>
         <span className="text-xs text-gray-400">· {item.KhachHang}</span>
         {item.boiMayLoi && (
@@ -456,9 +467,14 @@ function PhatSinhList({
             <p className="text-xs text-gray-500">
               <Link
                 href={`/tien-do/${p.MaLenh}`}
-                className="font-mono text-brand hover:underline"
+                className="hover:underline"
+                title="Mở tiến độ lệnh"
               >
-                {p.MaLenh}
+                <MaLenhHienThi
+                  maLenh={p.MaLenh}
+                  maLSXXuong={p.MaLSXXuong}
+                  size="xs"
+                />
               </Link>{" "}
               · {p.TenSanPham} ({p.KhachHang})
               {p.HuongXuLy && ` · Xử lý: ${p.HuongXuLy}`}

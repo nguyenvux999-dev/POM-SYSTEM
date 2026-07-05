@@ -8,6 +8,7 @@ import { treHan } from "@/lib/domain/assist";
 import { parseLocal } from "@/lib/domain/datetime";
 import { NHAN_CONG_DOAN } from "@/lib/domain/labels";
 import { BadgeLenh } from "@/components/status-badge";
+import { MaLenhHienThi } from "@/components/lenh-specs";
 
 export const dynamic = "force-dynamic";
 
@@ -64,6 +65,7 @@ export default async function TienDoPage() {
         : undefined;
       return {
         MaLenh: l.MaLenh,
+        MaLSXXuong: l.MaLSXXuong ?? "",
         TrangThai: l.TrangThai,
         TenSanPham: d?.TenSanPham ?? "",
         KhachHang: d?.KhachHang ?? "",
@@ -132,7 +134,7 @@ export default async function TienDoPage() {
             }`}
           >
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-mono text-sm">{x.MaLenh}</span>
+              <MaLenhHienThi maLenh={x.MaLenh} maLSXXuong={x.MaLSXXuong} />
               <BadgeLenh value={x.TrangThai} />
               {x.tre && (
                 <span className="rounded bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">

@@ -38,6 +38,7 @@ export default async function PhatSinhPage() {
       return {
         MaPhatSinh: p.MaPhatSinh,
         MaLenh: p.MaLenh,
+        MaLSXXuong: lenh?.MaLSXXuong ?? "",
         Loai: p.Loai,
         MoTa: p.MoTa,
         MucDo: p.MucDo,
@@ -59,11 +60,13 @@ export default async function PhatSinhPage() {
     const d = donMap.get(lenh.MaDon);
     return {
       MaLenh: lenh.MaLenh,
+      MaLSXXuong: lenh.MaLSXXuong ?? "",
       TenSanPham: d?.TenSanPham ?? "",
       KhachHang: d?.KhachHang ?? "",
       HanHoanThanh: lenh.HanHoanThanh,
       CongDoanCanLam: lenh.CongDoanCanLam,
       SoLuong: d?.SoLuong ?? 0,
+      BuHaoPhanTram: lenh.BuHaoPhanTram ?? 0,
       boiPhatSinh: lyDo.boiPhatSinh,
       boiMayLoi: lyDo.boiMayLoi,
       congDoanBiKet: lyDo.congDoanBiKet.map((c) => ({

@@ -21,6 +21,12 @@ export default async function CheBanPage() {
       TenSanPham: d?.TenSanPham ?? "",
       KhachHang: d?.KhachHang ?? "",
       HanHoanThanh: l.HanHoanThanh,
+      MaLSXXuong: l.MaLSXXuong ?? "",
+      SoMau: d?.SoMau ?? "",
+      LoaiGiay: d?.LoaiGiay ?? "",
+      KhoGiay: l.KhoGiay ?? "",
+      KhoIn: l.KhoIn ?? "",
+      SoTrang: l.SoTrang ?? 0,
     };
   });
 

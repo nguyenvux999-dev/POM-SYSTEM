@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { CONG_DOAN, DO_UU_TIEN, type DoUuTien } from "@/lib/domain/enums";
 import { NHAN_CONG_DOAN, NHAN_DO_UU_TIEN } from "@/lib/domain/labels";
+import { BU_HAO_MAC_DINH_PHAN_TRAM } from "@/lib/domain/config";
 import type { LenhDraftInput } from "@/lib/domain/inputs";
 import { taoNhieuLenh } from "../actions";
 
@@ -16,7 +17,19 @@ function draftMoi(): LenhDraftInput {
     CongDoanCanLam: ["In"],
     DoUuTien: "BinhThuong",
     HanHoanThanh: "",
+    MaLSXXuong: "",
+    SoTrang: undefined,
+    KhoGiay: "",
+    KhoIn: "",
+    BuHaoPhanTram: BU_HAO_MAC_DINH_PHAN_TRAM,
   };
+}
+
+/** Parse ô số tùy chọn: rỗng → undefined; số hợp lệ → number; ngược lại → undefined. */
+function parseOptionalNum(raw: string): number | undefined {
+  if (raw.trim() === "") return undefined;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : undefined;
 }
 
 export function LenhManager({ maDon }: { maDon: string }) {
@@ -138,6 +151,89 @@ export function LenhManager({ maDon }: { maDon: string }) {
                   value={d.HanHoanThanh}
                   onChange={(e) => update(idx, { HanHoanThanh: e.target.value })}
                 />
+              </div>
+            </div>
+
+            {/* Thông số sản xuất (tùy chọn) — SoMau & LoaiGiay lấy từ đơn, không nhập lại. */}
+            <div className="mt-3 rounded-md border border-dashed border-gray-200 p-3">
+              <p className="mb-2 text-xs font-medium text-gray-500">
+                Thông số sản xuất (tùy chọn)
+              </p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Mã LSX xưởng
+                  </label>
+                  <input
+                    className={inputCls}
+                    value={d.MaLSXXuong ?? ""}
+                    onChange={(e) => update(idx, { MaLSXXuong: e.target.value })}
+                    placeholder="Vd: OS-25SL3101-30062026-3"
+                  />
+                  <p className="mt-1 text-[11px] text-gray-400">
+                    Bỏ trống nếu dùng mã hệ thống.
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Khổ giấy
+                  </label>
+                  <input
+                    className={inputCls}
+                    value={d.KhoGiay ?? ""}
+                    onChange={(e) => update(idx, { KhoGiay: e.target.value })}
+                    placeholder="Vd: 700x965mm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Khổ in
+                  </label>
+                  <input
+                    className={inputCls}
+                    value={d.KhoIn ?? ""}
+                    onChange={(e) => update(idx, { KhoIn: e.target.value })}
+                    placeholder="Vd: 700x475mm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Số trang
+                  </label>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    className={inputCls}
+                    value={d.SoTrang ?? ""}
+                    onChange={(e) =>
+                      update(idx, { SoTrang: parseOptionalNum(e.target.value) })
+                    }
+                    placeholder="Cho sản phẩm sách"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Bù hao (%)
+                  </label>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min={0}
+                    className={inputCls}
+                    value={d.BuHaoPhanTram ?? ""}
+                    onChange={(e) =>
+                      update(idx, {
+                        BuHaoPhanTram: parseOptionalNum(e.target.value),
+                      })
+                    }
+                    placeholder={`Mặc định ${BU_HAO_MAC_DINH_PHAN_TRAM}%`}
+                  />
+                  <p className="mt-1 text-[11px] text-gray-400">
+                    Bỏ trống/0 → dùng mặc định {BU_HAO_MAC_DINH_PHAN_TRAM}% khi
+                    tính thời lượng.
+                  </p>
+                </div>
               </div>
             </div>
 

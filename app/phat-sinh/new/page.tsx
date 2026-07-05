@@ -31,6 +31,7 @@ export default async function NewPhatSinhPage({
       const d = donMap.get(l.MaDon);
       return {
         MaLenh: l.MaLenh,
+        MaLSXXuong: l.MaLSXXuong ?? "",
         TenSanPham: d?.TenSanPham ?? "",
         KhachHang: d?.KhachHang ?? "",
       };

@@ -141,6 +141,7 @@ export async function xepLaiSuCo(
       lichHienCoKhac: lichAll.filter((l) => l.MaLenh !== maLenh),
       ganMay: gan,
       mocBatDauMongMuon: mocBatDau,
+      buHaoPhanTram: lenh.BuHaoPhanTram,
       now: nowLocal(),
     });
 

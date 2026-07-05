@@ -6,6 +6,7 @@ import { lichChayRepository } from "@/lib/repositories/lichChay";
 import { tienDoRepository } from "@/lib/repositories/tienDo";
 import { parseLocal } from "@/lib/domain/datetime";
 import { BadgeLenh } from "@/components/status-badge";
+import { MaLenhHienThi } from "@/components/lenh-specs";
 import { ProgressPanel, type StageVM } from "./update-form";
 
 export const dynamic = "force-dynamic";
@@ -55,7 +56,14 @@ export default async function TienDoLenhPage({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-mono text-lg font-semibold">{maLenh}</h1>
+          <h1 className="leading-tight">
+            <MaLenhHienThi
+              maLenh={lenh.MaLenh}
+              maLSXXuong={lenh.MaLSXXuong}
+              size="lg"
+              bold
+            />
+          </h1>
           <p className="text-sm text-gray-500">
             {don?.TenSanPham ?? ""} · {don?.KhachHang ?? ""}
           </p>

@@ -64,6 +64,11 @@ export async function taoNhieuLenh(
           CongDoanCanLam: d.CongDoanCanLam.join(";"),
           DoUuTien: d.DoUuTien,
           HanHoanThanh: d.HanHoanThanh ?? "",
+          MaLSXXuong: d.MaLSXXuong?.trim() || undefined,
+          SoTrang: d.SoTrang,
+          KhoGiay: d.KhoGiay?.trim() || undefined,
+          KhoIn: d.KhoIn?.trim() || undefined,
+          BuHaoPhanTram: d.BuHaoPhanTram,
         },
         email,
       );

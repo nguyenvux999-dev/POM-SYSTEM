@@ -69,6 +69,7 @@ async function tinh(
     lichHienCo,
     ganMay: chuanGanMay(ganMay),
     mocBatDauMongMuon: mocBatDau,
+    buHaoPhanTram: lenh.BuHaoPhanTram,
     now: nowLocal(),
   });
   return { lenh, ket };

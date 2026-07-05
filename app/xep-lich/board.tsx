@@ -22,6 +22,7 @@ import {
 } from "@/lib/domain/datetime";
 import { NHAN_CONG_DOAN, NHAN_MAY_LOAI } from "@/lib/domain/labels";
 import { BadgeLich, BadgeUuTien } from "@/components/status-badge";
+import { MaLenhHienThi, ThongSoChips } from "@/components/lenh-specs";
 import { xepLaiLenh, xepLenh } from "./actions";
 
 // --- View models (dựng ở page.tsx, server) ---
@@ -38,6 +39,11 @@ export interface ChoXepVM {
   SoMau: string;
   LoaiGiay: string;
   KhoThanhPham: string;
+  MaLSXXuong: string;
+  KhoGiay: string;
+  KhoIn: string;
+  SoTrang: number;
+  BuHaoPhanTram: number;
 }
 
 export interface LichVM {
@@ -60,6 +66,10 @@ export interface LichVM {
   SoMau: string;
   LoaiGiay: string;
   KhoThanhPham: string;
+  MaLSXXuong: string;
+  KhoGiay: string;
+  KhoIn: string;
+  SoTrang: number;
 }
 
 const UU_TIEN_RANK: Record<DoUuTien, number> = {
@@ -214,6 +224,7 @@ export function Board({
                 soLuong: c.SoLuong,
                 may,
                 lichHienCo: lich,
+                buHaoPhanTram: c.BuHaoPhanTram,
                 now: nowDate,
               });
               const ketThuc = preview.reduce(
@@ -234,13 +245,26 @@ export function Board({
                   } ${tre ? "ring-1 ring-red-300" : ""}`}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-mono text-xs">{c.MaLenh}</span>
+                    <MaLenhHienThi
+                      maLenh={c.MaLenh}
+                      maLSXXuong={c.MaLSXXuong}
+                      size="xs"
+                    />
                     <BadgeUuTien value={c.DoUuTien} />
                   </div>
                   <p className="mt-1 text-sm font-medium text-gray-900">
                     {c.TenSanPham || "—"}
                   </p>
                   <p className="text-xs text-gray-500">{c.KhachHang}</p>
+                  <div className="mt-1">
+                    <ThongSoChips
+                      SoMau={c.SoMau}
+                      LoaiGiay={c.LoaiGiay}
+                      KhoGiay={c.KhoGiay}
+                      KhoIn={c.KhoIn}
+                      SoTrang={c.SoTrang}
+                    />
+                  </div>
                   <div className="mt-1 flex flex-wrap gap-1">
                     {parseCongDoan(c.CongDoanCanLam).map((cd, i) => (
                       <span
@@ -464,6 +488,7 @@ export function Board({
 
 interface LenhGroup {
   MaLenh: string;
+  MaLSXXuong: string;
   TenSanPham: string;
   KhachHang: string;
   HanHoanThanh: string;
@@ -490,6 +515,7 @@ function groupLenh(lich: LichVM[]): LenhGroup[] {
     );
     groups.push({
       MaLenh: maLenh,
+      MaLSXXuong: first.MaLSXXuong,
       TenSanPham: first.TenSanPham,
       KhachHang: first.KhachHang,
       HanHoanThanh: first.HanHoanThanh,
@@ -583,7 +609,7 @@ function LenhRow({
       }`}
     >
       <div className="flex flex-wrap items-center gap-2">
-        <span className="font-mono text-sm">{group.MaLenh}</span>
+        <MaLenhHienThi maLenh={group.MaLenh} maLSXXuong={group.MaLSXXuong} />
         <BadgeUuTien value={group.DoUuTien} />
         <span className="text-sm text-gray-700">{group.TenSanPham}</span>
         <span className="text-xs text-gray-400">· {group.KhachHang}</span>

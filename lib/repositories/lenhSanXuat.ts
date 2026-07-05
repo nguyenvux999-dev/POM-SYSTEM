@@ -13,6 +13,12 @@ export interface LenhCreateInput {
   CongDoanCanLam: string;
   DoUuTien: DoUuTien;
   HanHoanThanh: string;
+  // Trường sản xuất bổ sung — đều tùy chọn.
+  MaLSXXuong?: string;
+  SoTrang?: number;
+  KhoGiay?: string;
+  KhoIn?: string;
+  BuHaoPhanTram?: number;
 }
 
 class LenhSanXuatRepository extends BaseRepository<LenhSanXuat> {
@@ -58,6 +64,12 @@ class LenhSanXuatRepository extends BaseRepository<LenhSanXuat> {
       TrangThai: "ChoLenLich",
       NguoiCapNhat: actorEmail,
       NgayCapNhat: nowStamp(),
+      // Trường sản xuất bổ sung (bỏ trống → ghi ô rỗng, đọc lại thành ""/0/mặc định).
+      MaLSXXuong: input.MaLSXXuong,
+      SoTrang: input.SoTrang,
+      KhoGiay: input.KhoGiay,
+      KhoIn: input.KhoIn,
+      BuHaoPhanTram: input.BuHaoPhanTram,
     };
     return this.insert(lenh);
   }
@@ -80,4 +92,5 @@ export const lenhSanXuatRepository = new LenhSanXuatRepository({
   tab: "LenhSanXuat",
   columns: LENH_SAN_XUAT_COLUMNS,
   primaryKey: "MaLenh",
+  numberColumns: ["SoTrang", "BuHaoPhanTram"],
 });

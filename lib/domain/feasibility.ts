@@ -17,7 +17,11 @@ import {
   GIO_LAM_VIEC_MOI_NGAY,
 } from "./config";
 import { soNgayGiua } from "./datetime";
-import { uocTinhThoiLuongLenhPhut, type BangNangLuc } from "./estimate";
+import {
+  soLuongCanIn,
+  uocTinhThoiLuongLenhPhut,
+  type BangNangLuc,
+} from "./estimate";
 
 export interface KetQuaKhaThi {
   khaThi: boolean;
@@ -36,9 +40,11 @@ export function kiemTraKhaThi(
   ngayGiaoHang: string,
   bang: BangNangLuc,
   homNay: string,
+  /** % bù hao của lệnh; bỏ trống → dùng mặc định config (áp dụng nhất quán). */
+  buHaoPhanTram?: number,
 ): KetQuaKhaThi {
   const tongPhutSanXuat = uocTinhThoiLuongLenhPhut(
-    soLuong,
+    soLuongCanIn(soLuong, buHaoPhanTram),
     congDoanCanLam,
     bang,
   );

@@ -67,13 +67,17 @@ async function main(): Promise<void> {
   }
 
   // 3. Đảm bảo header đúng cho từng tab.
+  //    - Tab rỗng  -> ghi toàn bộ header chuẩn.
+  //    - Tab đã có -> chỉ APPEND các cột còn THIẾU vào CUỐI header (giữ nguyên cột
+  //      cũ + dữ liệu bên dưới). Nhờ vậy khi thêm trường mới (vd LenhSanXuat), sheet
+  //      cũ được "migrate" idempotent mà không mất dữ liệu; dòng cũ có ô mới trống.
   for (const { tab, columns } of TAB_SCHEMAS) {
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId,
       range: `${tab}!1:1`,
     });
-    const firstRow = res.data.values?.[0] ?? [];
-    const hasHeader = firstRow.some((c) => String(c ?? "").trim() !== "");
+    const firstRow = (res.data.values?.[0] ?? []).map((c) => String(c ?? ""));
+    const hasHeader = firstRow.some((c) => c.trim() !== "");
     if (!hasHeader) {
       await sheets.spreadsheets.values.update({
         spreadsheetId,
@@ -82,8 +86,20 @@ async function main(): Promise<void> {
         requestBody: { values: [[...columns]] },
       });
       console.log(`  ✓ Ghi header cho tab: ${tab}`);
+      continue;
+    }
+    const missing = columns.filter((c) => !firstRow.includes(c));
+    if (missing.length > 0) {
+      // Ghi lại cả dòng header = header cũ + cột thiếu (không đụng dữ liệu bên dưới).
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `${tab}!A1`,
+        valueInputOption: "RAW",
+        requestBody: { values: [[...firstRow, ...missing]] },
+      });
+      console.log(`  + Thêm cột vào ${tab}: ${missing.join(", ")}`);
     } else {
-      console.log(`  = Header đã có: ${tab}`);
+      console.log(`  = Header đã đủ: ${tab}`);
     }
   }
 

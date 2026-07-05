@@ -18,8 +18,15 @@ import { ghiPhatSinh } from "../actions";
 
 export interface LenhOption {
   MaLenh: string;
+  MaLSXXuong: string;
   TenSanPham: string;
   KhachHang: string;
+}
+
+/** Nhãn option: ưu tiên mã xưởng (kèm MaLenh trong ngoặc) nếu có. */
+function nhanLenh(l: LenhOption): string {
+  const ma = l.MaLSXXuong.trim() ? `${l.MaLSXXuong} (${l.MaLenh})` : l.MaLenh;
+  return `${ma} · ${l.TenSanPham} (${l.KhachHang})`;
 }
 export interface MayOption {
   MaMay: string;
@@ -102,7 +109,7 @@ export function PhatSinhForm({
             <option value="">— Chọn lệnh —</option>
             {lenhOptions.map((l) => (
               <option key={l.MaLenh} value={l.MaLenh}>
-                {l.MaLenh} · {l.TenSanPham} ({l.KhachHang})
+                {nhanLenh(l)}
               </option>
             ))}
           </select>

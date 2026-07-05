@@ -55,6 +55,18 @@ export interface LenhSanXuat {
   TrangThai: LenhTrangThai;
   NguoiCapNhat: string;
   NgayCapNhat: string;
+  // --- Trường sản xuất bổ sung (đều TÙY CHỌN; dòng dữ liệu cũ không có → undefined). ---
+  // Lưu ý: SoMau & LoaiGiay KHÔNG ở đây — đã có trong DonHang, đọc qua join.
+  /** Mã lệnh theo định dạng xưởng, vd "OS-25SL3101-30062026-3". Bỏ trống → dùng MaLenh. */
+  MaLSXXuong?: string;
+  /** Số trang (cho sản phẩm sách); 0/trống = không áp dụng. */
+  SoTrang?: number;
+  /** Khổ giấy, vd "700x965mm". */
+  KhoGiay?: string;
+  /** Khổ in, vd "700x475mm". */
+  KhoIn?: string;
+  /** % bù hao. Trống/0 → dùng BU_HAO_MAC_DINH_PHAN_TRAM khi tính thời lượng. */
+  BuHaoPhanTram?: number;
 }
 
 /** Tab `May` — Máy móc & năng lực. Khóa chính: MaMay. */

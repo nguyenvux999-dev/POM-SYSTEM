@@ -14,10 +14,31 @@
 
 import type { May } from "./types";
 import {
+  BU_HAO_MAC_DINH_PHAN_TRAM,
   CONGDOAN_KHAC_MAKEREADY_PHUT,
   CONGDOAN_KHAC_NANGSUAT,
   CONGDOAN_MAY,
 } from "./config";
+
+/**
+ * Số lượng cần in đã cộng bù hao (dùng làm ĐẦU VÀO cho mọi công thức thời lượng):
+ *   SoLuongCanIn = SoLuong × (1 + %bù hao / 100)
+ *
+ * `buHaoPhanTram` không nhập/không hợp lệ/≤ 0 → dùng BU_HAO_MAC_DINH_PHAN_TRAM
+ * (theo yêu cầu "không để 0 nếu config có default"; ô Sheets trống đọc ra 0 nên 0
+ * được hiểu là "chưa nhập"). Gọi hàm này tại các RANH GIỚI tính thời lượng
+ * (feasibility, schedule) — KHÔNG cộng bù hao lần nữa ở các hàm cấp thấp.
+ */
+export function soLuongCanIn(soLuong: number, buHaoPhanTram?: number): number {
+  const sl = Number.isFinite(soLuong) && soLuong > 0 ? soLuong : 0;
+  const pct =
+    buHaoPhanTram != null &&
+    Number.isFinite(buHaoPhanTram) &&
+    buHaoPhanTram > 0
+      ? buHaoPhanTram
+      : BU_HAO_MAC_DINH_PHAN_TRAM;
+  return sl * (1 + pct / 100);
+}
 
 /** Năng lực đại diện của một loại máy (máy nhanh nhất đang hoạt động). */
 export interface NangSuatMay {

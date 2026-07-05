@@ -39,6 +39,13 @@ export const LENH_SAN_XUAT_COLUMNS = [
   "TrangThai",
   "NguoiCapNhat",
   "NgayCapNhat",
+  // Trường sản xuất bổ sung (thêm vào CUỐI header — dữ liệu cũ vẫn đọc bình thường).
+  // SoMau/LoaiGiay KHÔNG lặp ở đây: đã có trong DonHang, đọc qua join.
+  "MaLSXXuong",
+  "SoTrang",
+  "KhoGiay",
+  "KhoIn",
+  "BuHaoPhanTram",
 ] as const;
 
 export const MAY_COLUMNS = [

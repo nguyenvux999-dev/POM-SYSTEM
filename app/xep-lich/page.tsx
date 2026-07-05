@@ -35,6 +35,11 @@ export default async function XepLichPage() {
         SoMau: d?.SoMau ?? "",
         LoaiGiay: d?.LoaiGiay ?? "",
         KhoThanhPham: d?.KhoThanhPham ?? "",
+        MaLSXXuong: l.MaLSXXuong ?? "",
+        KhoGiay: l.KhoGiay ?? "",
+        KhoIn: l.KhoIn ?? "",
+        SoTrang: l.SoTrang ?? 0,
+        BuHaoPhanTram: l.BuHaoPhanTram ?? 0,
       };
     });
 
@@ -51,6 +56,10 @@ export default async function XepLichPage() {
       SoMau: d?.SoMau ?? "",
       LoaiGiay: d?.LoaiGiay ?? "",
       KhoThanhPham: d?.KhoThanhPham ?? "",
+      MaLSXXuong: lenh?.MaLSXXuong ?? "",
+      KhoGiay: lenh?.KhoGiay ?? "",
+      KhoIn: lenh?.KhoIn ?? "",
+      SoTrang: lenh?.SoTrang ?? 0,
     };
   });
 
