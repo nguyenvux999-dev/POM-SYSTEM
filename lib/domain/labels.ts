@@ -47,9 +47,15 @@ export const NHAN_LENH_TRANG_THAI: Record<LenhTrangThai, string> = {
 
 export const NHAN_CONG_DOAN: Record<CongDoan, string> = {
   In: "In",
+  Cat: "Cắt",
   CanMang: "Cán màng",
   Be: "Bế",
+  DucLo: "Đục lỗ",
   Dan: "Dán",
+  Gap2: "Gấp 2",
+  Gap3: "Gấp 3",
+  Kiem: "Kiểm",
+  DongSach: "Đóng sách",
   DongGhim: "Đóng ghim",
   EpKim: "Ép kim",
   Khac: "Khác",

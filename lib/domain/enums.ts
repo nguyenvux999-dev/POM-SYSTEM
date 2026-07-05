@@ -57,11 +57,20 @@ export const MAY_TRANG_THAI = ["HoatDong", "BaoTri", "Hong"] as const;
 export type MayTrangThai = (typeof MAY_TRANG_THAI)[number];
 
 // --- Công đoạn sản xuất (dùng chung cho LichChay, TienDo) ---
+// Thứ tự = thứ tự hiển thị trong bộ chọn công đoạn (theo luồng sản xuất của xưởng).
 export const CONG_DOAN = [
   "In",
+  "Cat",
   "CanMang",
   "Be",
+  "DucLo",
   "Dan",
+  "Gap2",
+  "Gap3",
+  "Kiem",
+  "DongSach",
+  // Công đoạn cũ — GIỮ LẠI để dữ liệu cũ vẫn đọc/hiển thị bình thường
+  // (không nằm trong danh sách xưởng mới nhưng có thể còn ở lệnh đã tạo).
   "DongGhim",
   "EpKim",
   "Khac",
