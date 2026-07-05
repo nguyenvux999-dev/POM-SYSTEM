@@ -26,7 +26,8 @@ export default async function TienDoLenhPage({
     tienDoRepository.findByLenh(maLenh),
   ]);
 
-  const soLuong = don?.SoLuong ?? 0;
+  // Mục tiêu tiến độ của lệnh = số tờ in của mẻ (không phải SL đơn/mã SP).
+  const soLuong = lenh.SoToIn ?? 0;
 
   const stages: StageVM[] = lichRows
     .slice()

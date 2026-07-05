@@ -65,7 +65,7 @@ export default async function PhatSinhPage() {
       KhachHang: d?.KhachHang ?? "",
       HanHoanThanh: lenh.HanHoanThanh,
       CongDoanCanLam: lenh.CongDoanCanLam,
-      SoLuong: d?.SoLuong ?? 0,
+      SoToIn: lenh.SoToIn ?? 0,
       BuHaoPhanTram: lenh.BuHaoPhanTram ?? 0,
       boiPhatSinh: lyDo.boiPhatSinh,
       boiMayLoi: lyDo.boiMayLoi,

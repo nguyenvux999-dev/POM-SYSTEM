@@ -69,7 +69,8 @@ export default async function TienDoPage() {
         TrangThai: l.TrangThai,
         TenSanPham: d?.TenSanPham ?? "",
         KhachHang: d?.KhachHang ?? "",
-        SoLuong: d?.SoLuong ?? 0,
+        // Mục tiêu tiến độ = số tờ in của lệnh (mẻ chạy máy).
+        SoToIn: l.SoToIn ?? 0,
         HanHoanThanh: l.HanHoanThanh,
         total,
         done,
@@ -166,7 +167,7 @@ export default async function TienDoPage() {
                 <>
                   Hiện tại: <strong>{NHAN_CONG_DOAN[x.current.CongDoan]}</strong>
                   {x.latest
-                    ? ` · đạt ${x.latest.SoLuongDat.toLocaleString()}/${x.SoLuong.toLocaleString()}`
+                    ? ` · đạt ${x.latest.SoLuongDat.toLocaleString()}/${x.SoToIn.toLocaleString()}`
                     : " · chưa bắt đầu"}
                 </>
               ) : (

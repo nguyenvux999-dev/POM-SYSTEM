@@ -7,6 +7,7 @@ import { lenhSanXuatRepository } from "@/lib/repositories/lenhSanXuat";
 import { lichChayRepository } from "@/lib/repositories/lichChay";
 import { tienDoRepository } from "@/lib/repositories/tienDo";
 import { phatSinhRepository } from "@/lib/repositories/phatSinh";
+import { maSanPhamRepository } from "@/lib/repositories/maSanPham";
 import { RepositoryError } from "@/lib/repositories/base";
 import {
   moiLichDaXong,
@@ -18,6 +19,7 @@ import type {
   DonHangInput,
   LenhDraftInput,
   LenhEditInput,
+  MaSanPhamInput,
 } from "@/lib/domain/inputs";
 
 /** Email người đang đăng nhập (đã qua middleware — luôn có, phòng hờ fallback). */
@@ -50,51 +52,74 @@ export async function taoDon(
   }
 }
 
-export async function taoNhieuLenh(
+/**
+ * Tạo DUY NHẤT 1 lệnh cho một đơn (mô hình 1 đơn ↔ 1 lệnh) + các dòng mã sản phẩm
+ * mô tả. Chặn nếu đơn đã có lệnh. SoToIn bắt buộc (> 0) để tính được thời lượng.
+ */
+export async function taoLenh(
   maDon: string,
-  drafts: LenhDraftInput[],
-): Promise<{ ok: true; created: number } | { ok: false; error: string }> {
+  lenh: LenhDraftInput,
+  maSanPham: MaSanPhamInput[],
+): Promise<{ ok: true; maLenh: string } | { ok: false; error: string }> {
   try {
-    if (!drafts.length) return loi("Chưa có lệnh nào để tạo.");
-    for (const d of drafts) {
-      if (!d.CongDoanCanLam?.length) {
-        return loi("Mỗi lệnh cần chọn ít nhất 1 công đoạn.");
-      }
+    if (!lenh.CongDoanCanLam?.length) {
+      return loi("Lệnh cần chọn ít nhất 1 công đoạn.");
+    }
+    if (!(Number(lenh.SoToIn) > 0)) {
+      return loi("Cần nhập Số tờ in (> 0) để tính được thời lượng.");
+    }
+    const dsMa = (maSanPham ?? []).filter(
+      (m) => m.MaSanPham?.trim() || m.TenSanPham?.trim(),
+    );
+    if (dsMa.length === 0) {
+      return loi("Cần ít nhất 1 mã sản phẩm trong lệnh.");
     }
 
     const email = await actorEmail();
-
-    // Toàn vẹn tham chiếu: kiểm tra đơn tồn tại (repo cũng kiểm lại mỗi lần insert).
     const don = await donHangRepository.findById(maDon);
     if (!don) return loi(`Không tồn tại đơn hàng ${maDon}.`);
 
-    let created = 0;
-    for (const d of drafts) {
-      await lenhSanXuatRepository.create(
+    // Mô hình 1–1: chặn nếu đơn đã có lệnh (repo cũng kiểm lại khi insert).
+    if (await lenhSanXuatRepository.findOneByMaDon(maDon)) {
+      return loi("Đơn này đã có lệnh sản xuất.");
+    }
+
+    const created = await lenhSanXuatRepository.create(
+      {
+        MaDon: maDon,
+        MoTaCongViec: lenh.MoTaCongViec ?? "",
+        CongDoanCanLam: lenh.CongDoanCanLam.join(";"),
+        DoUuTien: lenh.DoUuTien,
+        HanHoanThanh: lenh.HanHoanThanh ?? "",
+        MaLSXXuong: lenh.MaLSXXuong?.trim() || undefined,
+        SoTrang: lenh.SoTrang,
+        KhoGiay: lenh.KhoGiay?.trim() || undefined,
+        KhoIn: lenh.KhoIn?.trim() || undefined,
+        BuHaoPhanTram: lenh.BuHaoPhanTram,
+        SoToIn: lenh.SoToIn,
+      },
+      email,
+    );
+
+    // Các dòng mã sản phẩm (thuần mô tả), gắn theo MaLenh.
+    for (const m of dsMa) {
+      await maSanPhamRepository.create(
         {
-          MaDon: maDon,
-          MoTaCongViec: d.MoTaCongViec ?? "",
-          CongDoanCanLam: d.CongDoanCanLam.join(";"),
-          DoUuTien: d.DoUuTien,
-          HanHoanThanh: d.HanHoanThanh ?? "",
-          MaLSXXuong: d.MaLSXXuong?.trim() || undefined,
-          SoTrang: d.SoTrang,
-          KhoGiay: d.KhoGiay?.trim() || undefined,
-          KhoIn: d.KhoIn?.trim() || undefined,
-          BuHaoPhanTram: d.BuHaoPhanTram,
+          MaLenh: created.MaLenh,
+          MaSanPham: m.MaSanPham?.trim() ?? "",
+          TenSanPham: m.TenSanPham?.trim() ?? "",
+          KichThuoc: m.KichThuoc?.trim() ?? "",
+          SoLuong: Number.isFinite(m.SoLuong) ? m.SoLuong : 0,
         },
         email,
       );
-      created++;
     }
 
     // Sau khi tạo lệnh, đơn chuyển sang "Chờ chế bản".
     await donHangRepository.update(maDon, { TrangThai: "ChoCheBan" }, email);
 
-    revalidatePath(`/don-hang/${maDon}`);
-    revalidatePath("/don-hang");
-    revalidatePath("/che-ban");
-    return { ok: true, created };
+    revalidateLenh(maDon);
+    return { ok: true, maLenh: created.MaLenh };
   } catch (e) {
     if (e instanceof RepositoryError) return loi(e.message);
     return loi(e instanceof Error ? e.message : String(e));
@@ -180,12 +205,13 @@ export async function suaLenh(
     const doiBuHao =
       chuanBuHao(input.BuHaoPhanTram) !== chuanBuHao(lenh.BuHaoPhanTram);
     const doiHan = (input.HanHoanThanh ?? "") !== (lenh.HanHoanThanh ?? "");
-    const doiAnhHuongLich = doiCongDoan || doiBuHao || doiHan;
+    const doiSoToIn = (input.SoToIn ?? 0) !== (lenh.SoToIn ?? 0);
+    const doiAnhHuongLich = doiCongDoan || doiBuHao || doiHan || doiSoToIn;
 
     if (doiAnhHuongLich && !quyen.suaAnhHuongLich) {
       return loi(
         quyen.lyDoKhoaSua ??
-          "Không thể đổi công đoạn/bù hao/hạn của lệnh này.",
+          "Không thể đổi công đoạn/bù hao/hạn/số tờ in của lệnh này.",
       );
     }
 
@@ -202,6 +228,7 @@ export async function suaLenh(
       patch.CongDoanCanLam = cdMoi;
       patch.BuHaoPhanTram = input.BuHaoPhanTram;
       patch.HanHoanThanh = input.HanHoanThanh ?? "";
+      patch.SoToIn = input.SoToIn;
     }
     await lenhSanXuatRepository.update(maLenh, patch, email);
 
@@ -212,6 +239,7 @@ export async function suaLenh(
       if (doiCongDoan) cac.push("công đoạn");
       if (doiBuHao) cac.push("bù hao");
       if (doiHan) cac.push("hạn");
+      if (doiSoToIn) cac.push("số tờ in");
       await danhDauCanXepLai(
         maLenh,
         `Đã sửa ${cac.join(", ")} sau khi đã xếp lịch — lịch cũ không còn đúng, cần xếp lại.`,
@@ -254,9 +282,10 @@ export async function xoaLenh(
     if (!quyen.xoaDuoc) return loi(quyen.lyDoKhoaXoa ?? "Không thể xóa lệnh này.");
 
     // 1) Dọn dữ liệu con TRƯỚC (không để mồ côi): mọi LichChay + mọi PhatSinh
-    //    (gồm marker "cần xếp lại" tự sinh). TienDo đã được chặn ở quy tắc trên.
+    //    (gồm marker "cần xếp lại" tự sinh) + mọi mã sản phẩm. TienDo đã bị chặn ở trên.
     const touched = await lichChayRepository.xoaTheoLenh(maLenh);
     await phatSinhRepository.xoaTheoLenh(maLenh);
+    await maSanPhamRepository.xoaTheoLenh(maLenh);
     // 2) Xóa lệnh.
     await lenhSanXuatRepository.deleteByKey(maLenh);
     // 3) Tính lại ThuTu các lịch còn lại trên máy bị đụng.

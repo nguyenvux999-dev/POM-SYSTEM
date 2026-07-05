@@ -19,13 +19,20 @@ export interface LenhCreateInput {
   KhoGiay?: string;
   KhoIn?: string;
   BuHaoPhanTram?: number;
+  SoToIn?: number;
 }
 
 class LenhSanXuatRepository extends BaseRepository<LenhSanXuat> {
-  /** Tất cả lệnh thuộc một đơn. */
+  /** Tất cả lệnh thuộc một đơn (mô hình 1–1 → 0 hoặc 1 phần tử). */
   async findByMaDon(maDon: string): Promise<LenhSanXuat[]> {
     const all = await this.findAll();
     return all.filter((l) => l.MaDon === maDon);
+  }
+
+  /** Lệnh (DUY NHẤT) của một đơn — mô hình 1 đơn ↔ 1 lệnh; không có → null. */
+  async findOneByMaDon(maDon: string): Promise<LenhSanXuat | null> {
+    const all = await this.findAll();
+    return all.find((l) => l.MaDon === maDon) ?? null;
   }
 
   /** Sinh MaLenh dạng LSX-{năm}-{NNNN}. */
@@ -53,6 +60,13 @@ class LenhSanXuatRepository extends BaseRepository<LenhSanXuat> {
         `Không tồn tại đơn hàng MaDon="${input.MaDon}" — không thể tạo lệnh sản xuất.`,
       );
     }
+    // Mô hình 1 đơn ↔ 1 lệnh: chặn tạo lệnh thứ hai cho cùng đơn.
+    const daCo = await this.findOneByMaDon(input.MaDon);
+    if (daCo) {
+      throw new RepositoryError(
+        `Đơn này đã có lệnh sản xuất (${daCo.MaLenh}) — mỗi đơn chỉ có 1 lệnh.`,
+      );
+    }
     const lenh: LenhSanXuat = {
       MaLenh: await this.generateMaLenh(),
       MaDon: input.MaDon,
@@ -70,6 +84,7 @@ class LenhSanXuatRepository extends BaseRepository<LenhSanXuat> {
       KhoGiay: input.KhoGiay,
       KhoIn: input.KhoIn,
       BuHaoPhanTram: input.BuHaoPhanTram,
+      SoToIn: input.SoToIn,
     };
     return this.insert(lenh);
   }
@@ -92,5 +107,5 @@ export const lenhSanXuatRepository = new LenhSanXuatRepository({
   tab: "LenhSanXuat",
   columns: LENH_SAN_XUAT_COLUMNS,
   primaryKey: "MaLenh",
-  numberColumns: ["SoTrang", "BuHaoPhanTram"],
+  numberColumns: ["SoTrang", "BuHaoPhanTram", "SoToIn"],
 });

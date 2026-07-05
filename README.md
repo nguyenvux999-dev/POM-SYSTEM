@@ -115,7 +115,8 @@ npm run format    # Prettier
 | Tab | Khóa chính | Ghi chú |
 |---|---|---|
 | `DonHang` | `MaDon` | Đơn hàng |
-| `LenhSanXuat` | `MaLenh` | Lệnh sản xuất (FK `MaDon`) |
+| `LenhSanXuat` | `MaLenh` | Lệnh sản xuất — **1–1 với DonHang** (mỗi đơn tối đa 1 lệnh; FK `MaDon`) |
+| `MaSanPham` | `MaDongSP` | Mã sản phẩm in **ghép chung** trong lệnh (FK `MaLenh`) — **thuần mô tả**, không có công đoạn/lịch/tiến độ |
 | `May` | `MaMay` | Máy móc (có seed mẫu) |
 | `LichChay` | `MaLich` | Lịch chạy máy (FK `MaLenh`, `MaMay`) |
 | `TienDo` | `MaLog` | Nhật ký tiến độ — **append-only** |
@@ -134,8 +135,15 @@ Tab `00_HuongDan` (nếu có) được app **bỏ qua**.
 | `KhoGiay` | text | Khổ giấy, vd `700x965mm`. |
 | `KhoIn` | text | Khổ in, vd `700x475mm`. |
 | `BuHaoPhanTram` | number | % bù hao; trống/0 → dùng `BU_HAO_MAC_DINH_PHAN_TRAM`. |
+| `SoToIn` | number | **Số tờ IN của mẻ** (nhập tay, bắt buộc). Đây là "số lượng" đưa vào công thức thời lượng (cùng bù hao) — **KHÔNG** phải tổng SL các mã SP (vì in ghép nhiều mã trên 1 tờ). |
 
-> `npm run seed` sẽ **tự thêm các cột còn thiếu** vào cuối header của tab đang có (idempotent, không mất dữ liệu). Chạy lại seed sau khi cập nhật mã.
+> `npm run seed` sẽ **tự thêm các cột còn thiếu** vào cuối header của tab đang có (idempotent, không mất dữ liệu) và **tạo tab `MaSanPham`** nếu chưa có. Chạy lại seed sau khi cập nhật mã.
+
+### Mô hình 1 đơn – 1 lệnh – nhiều mã sản phẩm
+
+- **Mỗi `DonHang` có tối đa 1 `LenhSanXuat`.** Tạo lệnh thứ hai cho cùng đơn bị **chặn** ("Đơn này đã có lệnh sản xuất"). Ở chi tiết đơn: chưa có lệnh → hiện form tạo; có lệnh → hiện lệnh (Sửa/Xóa). Danh sách đơn hiện sẵn **mã LSX + trạng thái lệnh** trên mỗi dòng.
+- **Một lệnh chứa nhiều mã sản phẩm** (in ghép chung một mẻ, chung công đoạn/máy/lịch) — lưu ở tab `MaSanPham` (thuần mô tả: mã, tên, kích thước, SL thành phẩm). Công đoạn / bù hao / xếp lịch / tiến độ / phát sinh **vẫn ở cấp LỆNH**, không tách xuống mã SP.
+- **`SoToIn` (số tờ in) là "số lượng" của lệnh** đưa vào công thức thời lượng — nhập tay khi tạo lệnh (bắt buộc > 0), vì nhiều mã in ghép trên 1 tờ nên KHÁC tổng SL các mã. Đổi `SoToIn` trên lệnh đã xếp lịch được coi là **ảnh hưởng lịch** (đánh dấu cần xếp lại) như công đoạn/bù hao/hạn.
 
 ### Sửa & Xóa lệnh — quy tắc chặn theo trạng thái
 
@@ -152,7 +160,7 @@ Tab `00_HuongDan` (nếu có) được app **bỏ qua**.
 | Chưa xếp | còn lại (`ChoLenLich`) | ✅ | ✅ | ✅ tự do |
 
 - **Đánh dấu cần xếp lại**: khi sửa trường ảnh hưởng lịch trên lệnh đã xếp, hệ thống tạo một `PhatSinh` `AnhHuongTienDo=true` (tái dùng cơ chế suy-ra ở Pha 3, **không thêm enum/cột**) → lệnh xuất hiện trong `/phat-sinh` "Cần xếp lại".
-- **Xóa dọn dữ liệu con**: xóa lệnh sẽ xóa kèm **mọi `LichChay`** (không để lịch mồ côi trên bảng xếp lịch) và **mọi `PhatSinh`** của lệnh, cập nhật lại `ThuTu` máy bị đụng, rồi **tính lại `TrangThai` đơn cha** (vd không còn lệnh nào → `Moi`; không đụng đơn `Huy`/`TreHen`). `TienDo` không bị xóa vì lệnh có tiến độ đã bị chặn xóa từ đầu.
+- **Xóa dọn dữ liệu con**: xóa lệnh sẽ xóa kèm **mọi `LichChay`** (không để lịch mồ côi trên bảng xếp lịch), **mọi `PhatSinh`** và **mọi `MaSanPham`** của lệnh, cập nhật lại `ThuTu` máy bị đụng, rồi **tính lại `TrangThai` đơn cha** (vd không còn lệnh nào → `Moi`; không đụng đơn `Huy`/`TreHen`). `TienDo` không bị xóa vì lệnh có tiến độ đã bị chặn xóa từ đầu.
 
 ---
 
@@ -199,8 +207,8 @@ Sửa số ở đây (không sửa code) khi có số thật của xưởng:
 > Năng suất/make-ready của **công đoạn có máy chuyên** lấy từ **máy nhanh nhất đang hoạt động** trong tab `May` (chỉ sửa dữ liệu tab May, không sửa code).
 
 **Công thức** (xem `lib/domain/estimate.ts`, `feasibility.ts`):
-`SoLuongCanIn = SoLuong × (1 + BuHaoPhanTram/100)` (bù hao lấy từ lệnh, trống/0 → `BU_HAO_MAC_DINH_PHAN_TRAM`);
-`thoiLuongPhut = makeReady + (SoLuongCanIn / NangSuat) × 60`; đơn khả thi khi `soNgayConLai ≥ soNgaySanXuat + đệm chế bản + đệm đóng gói`.
+`SoToInCanChay = SoToIn × (1 + BuHaoPhanTram/100)` (số tờ in của LỆNH, **không** phải tổng SL mã SP; bù hao trống/0 → `BU_HAO_MAC_DINH_PHAN_TRAM`);
+`thoiLuongPhut = makeReady + (SoToInCanChay / NangSuat) × 60`; đơn khả thi khi `soNgayConLai ≥ soNgaySanXuat + đệm chế bản + đệm đóng gói`.
 
 ### Smoke test Pha 1 (chạy sau `npm run dev`, cần đăng nhập)
 

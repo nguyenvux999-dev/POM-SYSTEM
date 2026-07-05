@@ -67,6 +67,27 @@ export interface LenhSanXuat {
   KhoIn?: string;
   /** % bù hao. Trống/0 → dùng BU_HAO_MAC_DINH_PHAN_TRAM khi tính thời lượng. */
   BuHaoPhanTram?: number;
+  /**
+   * Số tờ IN của mẻ (nhập tay). Đây là "số lượng" đưa vào công thức tính thời
+   * lượng (cùng bù hao) — KHÔNG phải tổng SL các mã sản phẩm (vì in ghép).
+   */
+  SoToIn?: number;
+}
+
+/**
+ * Tab `MaSanPham` — một mã sản phẩm in ghép trong lệnh. Khóa chính: MaDongSP. FK: MaLenh.
+ * THUẦN MÔ TẢ: không có công đoạn/lịch/tiến độ (những thứ đó ở cấp LỆNH).
+ */
+export interface MaSanPham {
+  MaDongSP: string;
+  MaLenh: string;
+  MaSanPham: string;
+  TenSanPham: string;
+  KichThuoc: string;
+  /** Số lượng THÀNH PHẨM của riêng mã này (mô tả, không dùng để tính thời lượng). */
+  SoLuong: number;
+  NguoiCapNhat: string;
+  NgayCapNhat: string;
 }
 
 /** Tab `May` — Máy móc & năng lực. Khóa chính: MaMay. */

@@ -31,7 +31,7 @@ export default async function XepLichPage() {
         HanHoanThanh: l.HanHoanThanh,
         DoUuTien: l.DoUuTien,
         CongDoanCanLam: l.CongDoanCanLam,
-        SoLuong: d?.SoLuong ?? 0,
+        SoToIn: l.SoToIn ?? 0,
         SoMau: d?.SoMau ?? "",
         LoaiGiay: d?.LoaiGiay ?? "",
         KhoThanhPham: d?.KhoThanhPham ?? "",

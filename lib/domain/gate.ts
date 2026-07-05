@@ -36,6 +36,7 @@ export const TRUONG_ANH_HUONG_LICH = [
   "CongDoanCanLam",
   "BuHaoPhanTram",
   "HanHoanThanh",
+  "SoToIn",
 ] as const;
 
 // ---------------------------------------------------------------------------

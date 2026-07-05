@@ -64,7 +64,8 @@ async function tinh(
 
   const ket = tinhLichChoLenh({
     congDoanCanLam: parseCongDoan(lenh.CongDoanCanLam),
-    soLuong: don.SoLuong,
+    // Số lượng = SỐ TỜ IN của lệnh (in ghép nhiều mã), không phải SL đơn.
+    soLuong: lenh.SoToIn ?? 0,
     may,
     lichHienCo,
     ganMay: chuanGanMay(ganMay),

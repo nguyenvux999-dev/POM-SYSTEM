@@ -250,7 +250,8 @@ export function danhSachNguyCoTre(params: {
     const don = donMap.get(lenh.MaDon);
     const kq = tinhLaiLichConLai({
       congDoanCanLam: parseCongDoan(lenh.CongDoanCanLam),
-      soLuong: don?.SoLuong ?? 0,
+      // Số lượng đưa vào công thức là SỐ TỜ IN của lệnh (không phải SL đơn/mã SP).
+      soLuong: lenh.SoToIn ?? 0,
       lichCuaLenh,
       may: mayList,
       lichHienCoKhac: lichAll.filter((l) => l.MaLenh !== lenh.MaLenh),

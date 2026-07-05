@@ -25,6 +25,15 @@ import {
 import { MaLenhHienThi, ThongSoChips } from "@/components/lenh-specs";
 import { suaLenh, xoaLenh } from "../actions";
 
+/** Một dòng mã sản phẩm để hiển thị (thuần mô tả). */
+export interface MaSanPhamRow {
+  MaDongSP: string;
+  MaSanPham: string;
+  TenSanPham: string;
+  KichThuoc: string;
+  SoLuong: number;
+}
+
 /** VM một lệnh cho danh sách sửa/xóa (dựng ở server, kèm quyền đã tính). */
 export interface LenhCardVM {
   MaLenh: string;
@@ -37,8 +46,10 @@ export interface LenhCardVM {
   KhoGiay: string;
   KhoIn: string;
   BuHaoPhanTram: number;
+  SoToIn: number;
   TrangThaiFile: TrangThaiFile;
   TrangThai: LenhTrangThai;
+  maSanPham: MaSanPhamRow[];
   quyen: QuyenLenh;
 }
 
@@ -62,6 +73,7 @@ interface EditDraft {
   CongDoanCanLam: string[];
   BuHaoPhanTram?: number;
   HanHoanThanh: string;
+  SoToIn?: number;
 }
 
 function toDraft(l: LenhCardVM): EditDraft {
@@ -75,6 +87,7 @@ function toDraft(l: LenhCardVM): EditDraft {
     CongDoanCanLam: parseCongDoan(l.CongDoanCanLam),
     BuHaoPhanTram: l.BuHaoPhanTram > 0 ? l.BuHaoPhanTram : undefined,
     HanHoanThanh: l.HanHoanThanh,
+    SoToIn: l.SoToIn > 0 ? l.SoToIn : undefined,
   };
 }
 
@@ -87,9 +100,7 @@ export function LenhList({
 }) {
   if (lenhs.length === 0) {
     return (
-      <p className="text-sm text-gray-400">
-        Chưa có lệnh. Tạo lệnh bên dưới (mặc định 1 lệnh, có thể thêm nhiều).
-      </p>
+      <p className="text-sm text-gray-400">Chưa có lệnh. Tạo lệnh bên dưới.</p>
     );
   }
   return (
@@ -154,6 +165,7 @@ function LenhCard({
         CongDoanCanLam: draft.CongDoanCanLam,
         BuHaoPhanTram: draft.BuHaoPhanTram,
         HanHoanThanh: draft.HanHoanThanh,
+        SoToIn: draft.SoToIn,
       });
       if (res.ok) {
         setMode("view");
@@ -235,11 +247,43 @@ function LenhCard({
           </div>
           <p className="mt-1 text-xs text-gray-500">
             {lenh.HanHoanThanh && <>Hạn hoàn thành: {lenh.HanHoanThanh} · </>}
-            Bù hao:{" "}
+            Số tờ in:{" "}
+            <strong className={lenh.SoToIn > 0 ? "" : "text-red-600"}>
+              {lenh.SoToIn > 0 ? lenh.SoToIn.toLocaleString() : "chưa nhập"}
+            </strong>{" "}
+            · Bù hao:{" "}
             {lenh.BuHaoPhanTram > 0
               ? `${lenh.BuHaoPhanTram}%`
               : `${BU_HAO_MAC_DINH_PHAN_TRAM}% (mặc định)`}
           </p>
+
+          {/* Mã sản phẩm trong lệnh (bảng con, mô tả) */}
+          {lenh.maSanPham.length > 0 && (
+            <div className="mt-2 overflow-x-auto rounded-md border border-gray-100">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-gray-50 text-gray-500">
+                  <tr>
+                    <th className="px-2 py-1">Mã SP</th>
+                    <th className="px-2 py-1">Tên</th>
+                    <th className="px-2 py-1">Kích thước</th>
+                    <th className="px-2 py-1 text-right">SL</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {lenh.maSanPham.map((m) => (
+                    <tr key={m.MaDongSP}>
+                      <td className="px-2 py-1 font-mono">{m.MaSanPham || "—"}</td>
+                      <td className="px-2 py-1">{m.TenSanPham || "—"}</td>
+                      <td className="px-2 py-1">{m.KichThuoc || "—"}</td>
+                      <td className="px-2 py-1 text-right">
+                        {m.SoLuong ? m.SoLuong.toLocaleString() : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           {/* Nút hành động theo quyền */}
           {mode === "view" && !q.chiDoc && (
@@ -371,8 +415,9 @@ function LenhCard({
             <div className="rounded-md border border-gray-200 p-3">
               {q.canhBaoXepLai && (
                 <div className="mb-2 rounded-md border border-amber-300 bg-amber-50 p-2 text-xs text-amber-800">
-                  ⚠️ Lịch đã xếp — đổi công đoạn / bù hao / hạn sẽ khiến lịch cũ
-                  không còn đúng, lệnh sẽ được đánh dấu <strong>cần xếp lại</strong>.
+                  ⚠️ Lịch đã xếp — đổi công đoạn / bù hao / hạn / số tờ in sẽ khiến
+                  lịch cũ không còn đúng, lệnh sẽ được đánh dấu{" "}
+                  <strong>cần xếp lại</strong>.
                 </div>
               )}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -383,6 +428,20 @@ function LenhCard({
                     className={inputCls}
                     value={draft.HanHoanThanh}
                     onChange={(e) => set("HanHoanThanh", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className={labelCls}>
+                    Số tờ in <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    className={inputCls}
+                    value={draft.SoToIn ?? ""}
+                    onChange={(e) => set("SoToIn", parseOptionalNum(e.target.value))}
+                    placeholder="Số tờ chạy máy"
                   />
                 </div>
                 <div>
@@ -431,7 +490,7 @@ function LenhCard({
             // Bị khóa: hiện chỉ-đọc + lý do.
             <div className="rounded-md border border-dashed border-gray-300 bg-gray-50 p-3 text-xs text-gray-500">
               <p className="mb-1 font-medium text-gray-600">
-                🔒 Không sửa được công đoạn / bù hao / hạn
+                🔒 Không sửa được công đoạn / bù hao / hạn / số tờ in
               </p>
               <p className="mb-2">{q.lyDoKhoaSua}</p>
               <p>
@@ -441,6 +500,7 @@ function LenhCard({
                   .join("  ")}
               </p>
               <p>
+                Số tờ in: {lenh.SoToIn > 0 ? lenh.SoToIn.toLocaleString() : "—"} ·
                 Hạn: {lenh.HanHoanThanh || "—"} · Bù hao:{" "}
                 {lenh.BuHaoPhanTram > 0
                   ? `${lenh.BuHaoPhanTram}%`

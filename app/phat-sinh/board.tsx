@@ -55,7 +55,7 @@ export interface CanXepLaiVM {
   KhachHang: string;
   HanHoanThanh: string;
   CongDoanCanLam: string;
-  SoLuong: number;
+  SoToIn: number;
   BuHaoPhanTram: number;
   boiPhatSinh: boolean;
   boiMayLoi: boolean;
@@ -271,7 +271,7 @@ function XepLaiRow({
     () =>
       tinhLaiLichConLai({
         congDoanCanLam: parseCongDoan(item.CongDoanCanLam),
-        soLuong: item.SoLuong,
+        soLuong: item.SoToIn,
         lichCuaLenh,
         may,
         lichHienCoKhac: lichKhac,

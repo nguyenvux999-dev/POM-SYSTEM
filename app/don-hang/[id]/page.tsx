@@ -4,8 +4,9 @@ import { donHangRepository } from "@/lib/repositories/donHang";
 import { lenhSanXuatRepository } from "@/lib/repositories/lenhSanXuat";
 import { lichChayRepository } from "@/lib/repositories/lichChay";
 import { tienDoRepository } from "@/lib/repositories/tienDo";
+import { maSanPhamRepository } from "@/lib/repositories/maSanPham";
 import { moiLichDaXong, quyenSuaXoaLenh } from "@/lib/domain/gate";
-import type { LichChay } from "@/lib/domain/types";
+import type { LichChay, MaSanPham } from "@/lib/domain/types";
 import { BadgeDonHang } from "@/components/status-badge";
 import { LenhManager } from "./lenh-manager";
 import { LenhList, type LenhCardVM } from "./lenh-list";
@@ -29,11 +30,12 @@ export default async function OrderDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [don, lenhList, lichAll, tienDoAll] = await Promise.all([
+  const [don, lenhList, lichAll, tienDoAll, maSanPhamAll] = await Promise.all([
     donHangRepository.findById(id),
     lenhSanXuatRepository.findByMaDon(id),
     lichChayRepository.findAll(),
     tienDoRepository.findAll(),
+    maSanPhamRepository.findAll(),
   ]);
   if (!don) notFound();
 
@@ -43,6 +45,12 @@ export default async function OrderDetailPage({
     const arr = lichByLenh.get(l.MaLenh) ?? [];
     arr.push(l);
     lichByLenh.set(l.MaLenh, arr);
+  }
+  const maSPByLenh = new Map<string, MaSanPham[]>();
+  for (const m of maSanPhamAll) {
+    const arr = maSPByLenh.get(m.MaLenh) ?? [];
+    arr.push(m);
+    maSPByLenh.set(m.MaLenh, arr);
   }
   const coTienDoSet = new Set(tienDoAll.map((t) => t.MaLenh));
 
@@ -59,8 +67,16 @@ export default async function OrderDetailPage({
       KhoGiay: l.KhoGiay ?? "",
       KhoIn: l.KhoIn ?? "",
       BuHaoPhanTram: l.BuHaoPhanTram ?? 0,
+      SoToIn: l.SoToIn ?? 0,
       TrangThaiFile: l.TrangThaiFile,
       TrangThai: l.TrangThai,
+      maSanPham: (maSPByLenh.get(l.MaLenh) ?? []).map((m) => ({
+        MaDongSP: m.MaDongSP,
+        MaSanPham: m.MaSanPham,
+        TenSanPham: m.TenSanPham,
+        KichThuoc: m.KichThuoc,
+        SoLuong: m.SoLuong ?? 0,
+      })),
       quyen: quyenSuaXoaLenh({
         trangThai: l.TrangThai,
         coLichChay: lich.length > 0,
@@ -69,6 +85,8 @@ export default async function OrderDetailPage({
       }),
     };
   });
+
+  const coLenh = lenhVMs.length > 0;
 
   return (
     <div className="space-y-5">
@@ -108,19 +126,20 @@ export default async function OrderDetailPage({
         </div>
       </div>
 
-      {/* Lệnh sản xuất hiện có — có Sửa/Xóa theo quy tắc trạng thái */}
-      <div className="rounded-lg border border-gray-200 bg-white p-4">
-        <h2 className="mb-3 text-sm font-semibold text-gray-700">
-          Lệnh sản xuất ({lenhVMs.length})
-        </h2>
-        <LenhList
-          lenhs={lenhVMs}
-          don={{ SoMau: don.SoMau, LoaiGiay: don.LoaiGiay }}
-        />
-      </div>
-
-      {/* Tạo lệnh (1 → N) */}
-      <LenhManager maDon={don.MaDon} />
+      {/* Lệnh sản xuất — mỗi đơn 1 lệnh. Có lệnh → hiện lệnh; chưa → form tạo. */}
+      {coLenh ? (
+        <div className="rounded-lg border border-gray-200 bg-white p-4">
+          <h2 className="mb-3 text-sm font-semibold text-gray-700">
+            Lệnh sản xuất
+          </h2>
+          <LenhList
+            lenhs={lenhVMs}
+            don={{ SoMau: don.SoMau, LoaiGiay: don.LoaiGiay }}
+          />
+        </div>
+      ) : (
+        <LenhManager maDon={don.MaDon} />
+      )}
     </div>
   );
 }

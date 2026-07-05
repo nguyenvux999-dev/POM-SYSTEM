@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { donHangRepository } from "@/lib/repositories/donHang";
+import { lenhSanXuatRepository } from "@/lib/repositories/lenhSanXuat";
 import {
   DON_HANG_TRANG_THAI,
   type DonHangTrangThai,
 } from "@/lib/domain/enums";
+import type { LenhSanXuat } from "@/lib/domain/types";
 import { NHAN_DON_HANG_TRANG_THAI } from "@/lib/domain/labels";
-import { BadgeDonHang } from "@/components/status-badge";
+import { BadgeDonHang, BadgeLenh } from "@/components/status-badge";
+import { MaLenhHienThi } from "@/components/lenh-specs";
 
 export const dynamic = "force-dynamic";
 
@@ -18,12 +21,33 @@ function parseTrangThai(v: string | undefined): DonHangTrangThai | undefined {
 export default async function DonHangListPage({
   searchParams,
 }: {
-  searchParams: Promise<{ trangThai?: string; khachHang?: string }>;
+  searchParams: Promise<{
+    trangThai?: string;
+    khachHang?: string;
+    lsx?: string;
+  }>;
 }) {
   const sp = await searchParams;
   const trangThai = parseTrangThai(sp.trangThai);
   const khachHang = sp.khachHang?.trim() || undefined;
-  const rows = await donHangRepository.filter({ trangThai, khachHang });
+  const lsx = sp.lsx?.trim() || undefined;
+  const [donRows, lenhAll] = await Promise.all([
+    donHangRepository.filter({ trangThai, khachHang }),
+    lenhSanXuatRepository.findAll(),
+  ]);
+  // Mô hình 1–1: mỗi đơn có 0/1 lệnh → map MaDon → lệnh để hiện nhanh trên danh sách.
+  const lenhByDon = new Map<string, LenhSanXuat>();
+  for (const l of lenhAll) lenhByDon.set(l.MaDon, l);
+
+  // Lọc theo mã Lệnh (LSX): khớp MaLSXXuong HOẶC MaLenh (chứa, không phân biệt hoa thường).
+  const rows = lsx
+    ? donRows.filter((d) => {
+        const l = lenhByDon.get(d.MaDon);
+        if (!l) return false;
+        const kho = `${l.MaLSXXuong ?? ""} ${l.MaLenh}`.toLowerCase();
+        return kho.includes(lsx.toLowerCase());
+      })
+    : donRows;
 
   return (
     <div className="space-y-4">
@@ -66,6 +90,15 @@ export default async function DonHangListPage({
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
           />
         </div>
+        <div className="flex-1">
+          <label className="block text-xs text-gray-500">Lệnh (LSX)</label>
+          <input
+            name="lsx"
+            defaultValue={lsx ?? ""}
+            placeholder="Mã LSX xưởng hoặc mã hệ thống"
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          />
+        </div>
         <div className="flex gap-2">
           <button
             type="submit"
@@ -92,6 +125,8 @@ export default async function DonHangListPage({
               <th className="px-3 py-2">Sản phẩm</th>
               <th className="px-3 py-2">SL</th>
               <th className="px-3 py-2">Giao hàng</th>
+              <th className="px-3 py-2">Lệnh (LSX)</th>
+              <th className="px-3 py-2">TT lệnh</th>
               <th className="px-3 py-2">Trạng thái</th>
             </tr>
           </thead>
@@ -112,13 +147,31 @@ export default async function DonHangListPage({
                 <td className="px-3 py-2">{d.SoLuong.toLocaleString()}</td>
                 <td className="px-3 py-2">{d.NgayGiaoHang}</td>
                 <td className="px-3 py-2">
+                  {lenhByDon.has(d.MaDon) ? (
+                    <MaLenhHienThi
+                      maLenh={lenhByDon.get(d.MaDon)!.MaLenh}
+                      maLSXXuong={lenhByDon.get(d.MaDon)!.MaLSXXuong}
+                      size="xs"
+                    />
+                  ) : (
+                    <span className="text-xs text-gray-400">Chưa có lệnh</span>
+                  )}
+                </td>
+                <td className="px-3 py-2">
+                  {lenhByDon.has(d.MaDon) ? (
+                    <BadgeLenh value={lenhByDon.get(d.MaDon)!.TrangThai} />
+                  ) : (
+                    <span className="text-xs text-gray-400">—</span>
+                  )}
+                </td>
+                <td className="px-3 py-2">
                   <BadgeDonHang value={d.TrangThai} />
                 </td>
               </tr>
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-3 py-6 text-center text-gray-400">
+                <td colSpan={9} className="px-3 py-6 text-center text-gray-400">
                   Không có đơn hàng nào khớp bộ lọc.
                 </td>
               </tr>

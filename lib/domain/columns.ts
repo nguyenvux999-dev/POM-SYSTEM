@@ -46,6 +46,9 @@ export const LENH_SAN_XUAT_COLUMNS = [
   "KhoGiay",
   "KhoIn",
   "BuHaoPhanTram",
+  // Số tờ IN của mẻ (nhập tay) — nhiều mã in ghép trên 1 tờ nên KHÁC tổng SL mã SP.
+  // Đây là "số lượng" đưa vào công thức tính thời lượng (cùng bù hao).
+  "SoToIn",
 ] as const;
 
 export const MAY_COLUMNS = [
@@ -105,6 +108,21 @@ export const NGUOI_DUNG_COLUMNS = [
   "BoPhan",
 ] as const;
 
+/**
+ * Tab `MaSanPham` — các mã sản phẩm in GHÉP CHUNG trong một lệnh (dòng con của lệnh,
+ * THUẦN MÔ TẢ). KHÔNG có công đoạn/lịch/tiến độ — những thứ đó ở cấp LỆNH.
+ */
+export const MA_SAN_PHAM_COLUMNS = [
+  "MaDongSP",
+  "MaLenh",
+  "MaSanPham",
+  "TenSanPham",
+  "KichThuoc",
+  "SoLuong",
+  "NguoiCapNhat",
+  "NgayCapNhat",
+] as const;
+
 /** Bảng đăng ký 7 tab (dùng cho seed: tạo tab + ghi header đúng thứ tự). */
 export const TAB_SCHEMAS: ReadonlyArray<{
   tab: string;
@@ -117,6 +135,7 @@ export const TAB_SCHEMAS: ReadonlyArray<{
   { tab: "TienDo", columns: TIEN_DO_COLUMNS },
   { tab: "PhatSinh", columns: PHAT_SINH_COLUMNS },
   { tab: "NguoiDung", columns: NGUOI_DUNG_COLUMNS },
+  { tab: "MaSanPham", columns: MA_SAN_PHAM_COLUMNS },
 ];
 
 /**

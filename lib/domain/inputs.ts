@@ -35,6 +35,16 @@ export interface LenhDraftInput {
   KhoGiay?: string;
   KhoIn?: string;
   BuHaoPhanTram?: number;
+  /** Số tờ in của mẻ (bắt buộc) — dùng để tính thời lượng. */
+  SoToIn?: number;
+}
+
+/** Một dòng mã sản phẩm nhập trong form lệnh (THUẦN MÔ TẢ). */
+export interface MaSanPhamInput {
+  MaSanPham: string;
+  TenSanPham: string;
+  KichThuoc: string;
+  SoLuong: number;
 }
 
 /**
@@ -53,6 +63,7 @@ export interface LenhEditInput {
   CongDoanCanLam: string[];
   BuHaoPhanTram?: number;
   HanHoanThanh: string;
+  SoToIn?: number;
 }
 
 /**

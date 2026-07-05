@@ -35,7 +35,7 @@ export interface ChoXepVM {
   HanHoanThanh: string;
   DoUuTien: DoUuTien;
   CongDoanCanLam: string;
-  SoLuong: number;
+  SoToIn: number;
   SoMau: string;
   LoaiGiay: string;
   KhoThanhPham: string;
@@ -221,7 +221,7 @@ export function Board({
             {choXepSorted.map((c) => {
               const preview = tinhLichChoLenh({
                 congDoanCanLam: parseCongDoan(c.CongDoanCanLam),
-                soLuong: c.SoLuong,
+                soLuong: c.SoToIn,
                 may,
                 lichHienCo: lich,
                 buHaoPhanTram: c.BuHaoPhanTram,

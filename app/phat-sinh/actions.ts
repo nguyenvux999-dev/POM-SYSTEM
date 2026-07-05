@@ -135,7 +135,8 @@ export async function xepLaiSuCo(
 
     const kq = tinhLaiLichConLai({
       congDoanCanLam: parseCongDoan(lenh.CongDoanCanLam),
-      soLuong: don.SoLuong,
+      // Số lượng = SỐ TỜ IN của lệnh (không phải SL đơn/mã SP).
+      soLuong: lenh.SoToIn ?? 0,
       lichCuaLenh,
       may: mayList,
       lichHienCoKhac: lichAll.filter((l) => l.MaLenh !== maLenh),

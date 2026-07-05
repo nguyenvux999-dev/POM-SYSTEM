@@ -28,6 +28,9 @@ import {
  * (theo yêu cầu "không để 0 nếu config có default"; ô Sheets trống đọc ra 0 nên 0
  * được hiểu là "chưa nhập"). Gọi hàm này tại các RANH GIỚI tính thời lượng
  * (feasibility, schedule) — KHÔNG cộng bù hao lần nữa ở các hàm cấp thấp.
+ *
+ * LƯU Ý (mô hình nhiều mã in ghép): `soLuong` đưa vào đây phải là SỐ TỜ IN của lệnh
+ * (LenhSanXuat.SoToIn) — số tờ chạy máy của mẻ — KHÔNG phải tổng SL các mã sản phẩm.
  */
 export function soLuongCanIn(soLuong: number, buHaoPhanTram?: number): number {
   const sl = Number.isFinite(soLuong) && soLuong > 0 ? soLuong : 0;
