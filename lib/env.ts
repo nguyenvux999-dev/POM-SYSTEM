@@ -27,18 +27,6 @@ function required(name: string): string {
   return value;
 }
 
-function optionalNumber(name: string, fallback: number): number {
-  const raw = process.env[name];
-  if (raw === undefined || raw.trim() === "") return fallback;
-  const parsed = Number(raw);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    throw new EnvError(
-      `[ENV] Biến ${name} phải là số dương, nhận được: "${raw}".`,
-    );
-  }
-  return parsed;
-}
-
 /**
  * Credential Service Account để truy cập Google Sheets (server-side only).
  *
@@ -83,9 +71,4 @@ export function getAllowedEmails(): string[] {
     .split(",")
     .map((e) => e.trim().toLowerCase())
     .filter((e) => e.length > 0);
-}
-
-/** TTL cache toàn sheet (giây). Mặc định 30s, cấu hình qua CACHE_TTL_SECONDS. */
-export function getCacheTtlSeconds(): number {
-  return optionalNumber("CACHE_TTL_SECONDS", 30);
 }

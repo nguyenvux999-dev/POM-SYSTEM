@@ -1,9 +1,9 @@
 /**
  * 7 interface thực thể — nguồn chân lý khớp 1-1 với cột trong các tab Google Sheets.
  *
- * Quy ước kiểu ở Pha 0:
+ * Quy ước kiểu:
  *  - date / datetime lưu & đọc như `string` (vd "2026-07-03", "2026-07-03 08:00").
- *    Chưa parse thành Date ở Pha 0.
+ *    Chưa parse thành Date.
  *  - number cho các cột số; boolean cho cột TRUE/FALSE.
  *  - Các cột enum dùng union type từ enums.ts.
  */
@@ -96,7 +96,7 @@ export interface TienDo {
   MaLenh: string;
   CongDoan: CongDoan;
   ThoiGian: string;
-  /** Trạng thái mới ghi nhận — để chuỗi tự do ở Pha 0. */
+  /** Trạng thái mới ghi nhận — để chuỗi tự do. */
   TrangThaiMoi: string;
   SoLuongDat: number;
   NguoiCapNhat: string;

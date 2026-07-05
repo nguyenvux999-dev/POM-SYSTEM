@@ -1,34 +1,40 @@
 /**
- * Cache toàn sheet ở server (RAM).
+ * Cache đọc Google Sheets — PHẠM VI MỘT REQUEST.
  *
- * Chiến lược: đọc CẢ một tab một lần bằng spreadsheets.values.get, giữ trong
- * bộ nhớ với TTL ngắn (mặc định 30s). Việc lọc/join làm trong code (repository).
- * Với mô hình một người dùng, cách này gần như không đụng quota.
+ * Bài học đã rút ra (nguồn của lỗi "ghi xong nhưng UI vẫn số cũ"): cache RAM sống
+ * XUYÊN request/instance là con dao hai lưỡi. Trên Vercel (serverless) mỗi instance
+ * giữ cache riêng — ghi ở instance A xóa cache A, nhưng lần đọc kế (router.refresh)
+ * có thể trúng instance B còn cache cũ trong suốt TTL → trả số cũ.
  *
- * Sau mỗi thao tác GHI phải gọi invalidate(tab) để lần đọc kế tiếp lấy dữ liệu mới.
+ * Vì vậy cache ở đây chỉ sống trong PHẠM VI MỘT request:
+ *  - Trong cùng một request/render/Server Action: đọc cùng một tab nhiều lần chỉ
+ *    gọi API một lần (dedup — tiết kiệm quota, giảm độ trễ khi cascade đọc lặp).
+ *  - invalidate(tab) sau khi GHI: xóa entry để lần đọc SAU trong CÙNG request lấy
+ *    dữ liệu mới (giữ đúng read-after-write trong luồng cascade trạng thái).
+ *  - Hết request: toàn bộ cache biến mất → request/instance kế tiếp LUÔN đọc mới,
+ *    không bao giờ có dữ liệu cũ giữa các lần tải trang hay giữa các instance.
  *
- * ⚠️ Lưu ý về vòng đời cache: trên Vercel (serverless) mỗi instance giữ cache
- * riêng và có thể bị thu hồi bất cứ lúc nào — đây là cache "best-effort" để
- * giảm số lần gọi API trong cùng một tiến trình, KHÔNG phải nguồn chân lý.
+ * Cơ chế phạm vi: React `cache()` cấp một Map RIÊNG cho mỗi request server và một
+ * Map MỚI cho request kế tiếp — không chia sẻ, tự dọn khi request kết thúc.
  */
 
 import "server-only";
+import { cache } from "react";
 import {
   getSheetsClient,
   getSpreadsheetId,
   translateSheetsError,
 } from "./client";
-import { getCacheTtlSeconds } from "@/lib/env";
 
 /** Một dòng dữ liệu thô từ Sheets (mảng ô dạng chuỗi). */
 export type SheetRow = string[];
 
-interface CacheEntry {
-  rows: SheetRow[];
-  expiresAt: number; // epoch ms
-}
-
-const store = new Map<string, CacheEntry>();
+/**
+ * Kho cache theo REQUEST. `cache()` bảo đảm mọi lần gọi trong cùng một request
+ * trả về CÙNG một Map; request kế tiếp nhận Map mới tinh. Lưu Promise (không phải
+ * mảng) để hai lần đọc song song cùng một tab chỉ gọi API một lần.
+ */
+const getRequestStore = cache((): Map<string, Promise<SheetRow[]>> => new Map());
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -49,7 +55,7 @@ async function fetchTab(tab: string): Promise<SheetRow[]> {
         dateTimeRenderOption: "FORMATTED_STRING",
       });
       const values = (res.data.values ?? []) as unknown[][];
-      // Chuẩn hóa mọi ô về string (Pha 0 làm việc ở mức chuỗi).
+      // Chuẩn hóa mọi ô về string.
       return values.map((row) => row.map((cell) => String(cell ?? "")));
     } catch (err) {
       const translated = translateSheetsError(err);
@@ -66,30 +72,31 @@ async function fetchTab(tab: string): Promise<SheetRow[]> {
 }
 
 /**
- * Lấy toàn bộ dòng của một tab (dùng cache nếu còn hạn).
- * Đọc cùng một tab hai lần liên tiếp chỉ gọi API một lần.
+ * Lấy toàn bộ dòng của một tab (dedup trong phạm vi request hiện tại).
+ * Đọc cùng một tab hai lần trong CÙNG request chỉ gọi API một lần.
  */
 export async function getRows(tab: string): Promise<SheetRow[]> {
-  const now = Date.now();
+  const store = getRequestStore();
   const cached = store.get(tab);
-  if (cached && cached.expiresAt > now) {
-    return cached.rows;
+  if (cached) return cached;
+
+  const promise = fetchTab(tab);
+  store.set(tab, promise);
+  try {
+    return await promise;
+  } catch (err) {
+    // Đừng giữ lại promise lỗi — lần đọc sau trong cùng request được thử lại.
+    store.delete(tab);
+    throw err;
   }
-
-  const rows = await fetchTab(tab);
-  store.set(tab, {
-    rows,
-    expiresAt: now + getCacheTtlSeconds() * 1000,
-  });
-  return rows;
 }
 
-/** Xóa cache của một tab (gọi sau mỗi lần ghi vào tab đó). */
+/** Xóa cache của một tab (gọi sau mỗi lần ghi vào tab đó, trong cùng request). */
 export function invalidate(tab: string): void {
-  store.delete(tab);
+  getRequestStore().delete(tab);
 }
 
-/** Xóa toàn bộ cache. */
+/** Xóa toàn bộ cache của request hiện tại. */
 export function invalidateAll(): void {
-  store.clear();
+  getRequestStore().clear();
 }

@@ -70,7 +70,6 @@ cp .env.example .env.local   # PowerShell: Copy-Item .env.example .env.local
 | `AUTH_SECRET` | chạy `npx auth secret` (hoặc `openssl rand -base64 32`) |
 | `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` | OAuth client ID/secret |
 | `ALLOWED_EMAILS` | email planner được phép, cách nhau bằng dấu phẩy |
-| `CACHE_TTL_SECONDS` | (tùy chọn) mặc định 30 |
 
 > ⚠️ **PRIVATE_KEY**: dán toàn bộ key trong **dấu ngoặc kép**, một dòng, **giữ nguyên các `\n`** (ký tự literal). Code tự chuyển `\n` thành xuống dòng thật khi dùng (`.replace(/\\n/g, "\n")`). Ví dụ:
 > ```

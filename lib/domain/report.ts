@@ -1,5 +1,5 @@
 /**
- * Pha 4 — Báo cáo (THUẦN, chỉ ĐỌC/tổng hợp; không import "server-only").
+ * Báo cáo (THUẦN, chỉ ĐỌC/tổng hợp; không import "server-only").
  *
  * Mọi số liệu SUY RA realtime từ các sheet — không lưu bảng báo cáo.
  * Tái sử dụng: assist.tinhTaiMay (tải máy), reschedule.danhSachNguyCoTre (máy hỏng),
@@ -178,7 +178,7 @@ export function baoCaoNgay(params: {
     }
   }
 
-  // Nguy cơ trễ = máy hỏng (Pha 3) ∪ lịch vượt hạn (Pha 2)
+  // Nguy cơ trễ = máy hỏng ∪ lịch vượt hạn
   const map = new Map<string, NguyCoTreVM>();
   for (const n of danhSachNguyCoTre({ lenhs, lichAll, mayList, donMap, now, homNay })) {
     map.set(n.MaLenh, {

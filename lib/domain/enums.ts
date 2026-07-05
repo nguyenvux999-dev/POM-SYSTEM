@@ -2,7 +2,7 @@
  * Enums (khai báo dạng const array + union type).
  *
  * Mỗi enum có:
- *  - Một mảng `const` chứa toàn bộ giá trị hợp lệ (dùng để validate & render dropdown ở các pha sau).
+ *  - Một mảng `const` chứa toàn bộ giá trị hợp lệ (dùng để validate & render dropdown).
  *  - Một union type suy ra từ mảng đó (dùng cho types.ts).
  *
  * Quy ước: giá trị lưu trong Google Sheets đúng bằng chuỗi trong mảng.

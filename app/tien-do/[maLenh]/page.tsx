@@ -5,9 +5,8 @@ import { donHangRepository } from "@/lib/repositories/donHang";
 import { lichChayRepository } from "@/lib/repositories/lichChay";
 import { tienDoRepository } from "@/lib/repositories/tienDo";
 import { parseLocal } from "@/lib/domain/datetime";
-import { NHAN_CONG_DOAN } from "@/lib/domain/labels";
 import { BadgeLenh } from "@/components/status-badge";
-import { UpdateForm, type StageVM } from "./update-form";
+import { ProgressPanel, type StageVM } from "./update-form";
 
 export const dynamic = "force-dynamic";
 
@@ -84,32 +83,7 @@ export default async function TienDoLenhPage({
         </span>
       </div>
 
-      {/* Tóm tắt các công đoạn hiện tại */}
-      <div className="rounded-lg border border-gray-200 bg-white p-3">
-        <p className="mb-2 text-sm font-semibold text-gray-700">Công đoạn</p>
-        <div className="space-y-1">
-          {stages.map((s) => (
-            <div
-              key={s.MaLich}
-              className="flex items-center justify-between border-b border-gray-100 py-1 text-sm last:border-0"
-            >
-              <span className="text-gray-700">
-                {NHAN_CONG_DOAN[s.CongDoan]}{" "}
-                <span className="text-xs text-gray-400">
-                  {s.BatDauDuKien.slice(5, 16)}
-                </span>
-              </span>
-              <span className="text-xs text-gray-500">
-                đạt {s.SoLuongDat.toLocaleString()}/{soLuong.toLocaleString()}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="rounded-lg border border-gray-200 bg-white p-3">
-        <UpdateForm maLenh={maLenh} soLuong={soLuong} stages={stages} />
-      </div>
+      <ProgressPanel maLenh={maLenh} soLuong={soLuong} stages={stages} />
     </div>
   );
 }

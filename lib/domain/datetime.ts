@@ -2,7 +2,7 @@
  * Tiện ích ngày/giờ (thuần, không import server-only).
  *
  * Toàn bộ tính theo múi giờ Việt Nam (Asia/Ho_Chi_Minh) để nhất quán dù server
- * chạy ở UTC (Vercel). Ở Pha 1 ngày/giờ vẫn lưu dạng chuỗi.
+ * chạy ở UTC (Vercel). Ngày/giờ lưu dạng chuỗi.
  */
 
 import {
@@ -70,7 +70,7 @@ export function soNgayGiua(a: string, b: string): number {
 }
 
 // ---------------------------------------------------------------------------
-// Pha 2 — mốc thời gian dùng để TÍNH TOÁN lịch chạy máy.
+// Mốc thời gian dùng để TÍNH TOÁN lịch chạy máy.
 //
 // Chiến lược "wall-clock lưu như UTC": mọi chuỗi "YYYY-MM-DD HH:mm" được coi là
 // giờ địa phương (Asia/Ho_Chi_Minh, không có DST) và ánh xạ 1-1 vào một Date qua

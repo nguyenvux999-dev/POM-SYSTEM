@@ -1,5 +1,5 @@
 /**
- * Pha 3 — Logic phát sinh & sắp xếp lại (THUẦN, không import "server-only").
+ * Logic phát sinh & sắp xếp lại (THUẦN, không import "server-only").
  *
  *  A. danhSachCanXepLai  — suy ra ĐỘNG lệnh cần xếp lại (không lưu cột riêng).
  *  B. tinhLaiLichConLai  — tính lại CHỈ công đoạn chưa Xong, giữ nguyên đã Xong.

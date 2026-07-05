@@ -32,7 +32,7 @@ export const CONGDOAN_KHAC_MAKEREADY_PHUT = 30;
 export const CONGDOAN_KHAC_NANGSUAT = 5000;
 
 // ---------------------------------------------------------------------------
-// Pha 2 — tham số xếp lịch (dùng ở lib/domain/datetime.ts + schedule.ts)
+// Tham số xếp lịch (dùng ở lib/domain/datetime.ts + schedule.ts)
 // ---------------------------------------------------------------------------
 
 /** ⚠️ CẦN PLANNER XÁC NHẬN — giờ bắt đầu ca làm mỗi ngày, dạng "HH:mm". */
@@ -46,7 +46,7 @@ export const GIO_BAT_DAU_LAM = "08:00";
 export const NGAY_NGHI: readonly number[] = [];
 
 // ---------------------------------------------------------------------------
-// Pha 3 — xử lý phát sinh & cảnh báo trễ (lib/domain/reschedule.ts)
+// Xử lý phát sinh & cảnh báo trễ (lib/domain/reschedule.ts)
 // ---------------------------------------------------------------------------
 
 /**
@@ -56,7 +56,7 @@ export const NGAY_NGHI: readonly number[] = [];
 export const DE_DOA_TRE_NGAY = 2;
 
 // ---------------------------------------------------------------------------
-// Pha 4 — báo cáo & archive
+// Báo cáo & archive
 // ---------------------------------------------------------------------------
 
 /**

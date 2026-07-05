@@ -30,7 +30,7 @@ export default async function CheBanPage() {
         <h1 className="text-xl font-semibold">Chế bản</h1>
         <p className="text-sm text-gray-500">
           Cập nhật trạng thái file của từng lệnh. Lệnh ở cột{" "}
-          <strong>Sẵn sàng</strong> mới được đưa vào xếp lịch (Pha 2).
+          <strong>Sẵn sàng</strong> mới được đưa vào xếp lịch.
         </p>
       </div>
       <Kanban cards={cards} />
