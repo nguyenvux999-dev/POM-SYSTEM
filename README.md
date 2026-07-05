@@ -137,6 +137,23 @@ Tab `00_HuongDan` (nếu có) được app **bỏ qua**.
 
 > `npm run seed` sẽ **tự thêm các cột còn thiếu** vào cuối header của tab đang có (idempotent, không mất dữ liệu). Chạy lại seed sau khi cập nhật mã.
 
+### Sửa & Xóa lệnh — quy tắc chặn theo trạng thái
+
+Ở màn chi tiết đơn (`/don-hang/[id]`), mỗi lệnh có nút **Sửa / Xóa** hiện theo quy tắc. Quyết định dựa trên **dữ liệu con THẬT** — `coLichChay` (có dòng `LichChay`) và `coTienDo` (có dòng `TienDo`) — chứ không chỉ tin cột `TrangThai` (giá trị suy ra có thể lệch). Kiểm **hai tầng**: UI ẩn/khóa nút, và Server Action kiểm lại trước khi ghi/xóa (`lib/domain/gate.ts` → `quyenSuaXoaLenh`).
+
+- **Trường VÔ HẠI** (sửa không ảnh hưởng lịch): `MoTaCongViec, MaLSXXuong, DoUuTien, SoTrang, KhoGiay, KhoIn`.
+- **Trường ẢNH HƯỞNG LỊCH**: `CongDoanCanLam, BuHaoPhanTram, HanHoanThanh`.
+
+| Mức lệnh | Điều kiện | Sửa vô hại | Sửa ảnh hưởng lịch | Xóa |
+|---|---|---|---|---|
+| Hoàn thành | `TrangThai=HoanThanh` **hoặc** mọi công đoạn (LichChay) đã Xong | ❌ | ❌ | ❌ (chỉ đọc) |
+| Đang chạy | `coTienDo=true` | ✅ | ❌ (báo lỗi) | ❌ |
+| Đã xếp lịch | `coLichChay=true`, chưa có tiến độ | ✅ | ✅ + cảnh báo → **đánh dấu cần xếp lại** | ✅ **xóa kèm LichChay** (xác nhận) |
+| Chưa xếp | còn lại (`ChoLenLich`) | ✅ | ✅ | ✅ tự do |
+
+- **Đánh dấu cần xếp lại**: khi sửa trường ảnh hưởng lịch trên lệnh đã xếp, hệ thống tạo một `PhatSinh` `AnhHuongTienDo=true` (tái dùng cơ chế suy-ra ở Pha 3, **không thêm enum/cột**) → lệnh xuất hiện trong `/phat-sinh` "Cần xếp lại".
+- **Xóa dọn dữ liệu con**: xóa lệnh sẽ xóa kèm **mọi `LichChay`** (không để lịch mồ côi trên bảng xếp lịch) và **mọi `PhatSinh`** của lệnh, cập nhật lại `ThuTu` máy bị đụng, rồi **tính lại `TrangThai` đơn cha** (vd không còn lệnh nào → `Moi`; không đụng đơn `Huy`/`TreHen`). `TienDo` không bị xóa vì lệnh có tiến độ đã bị chặn xóa từ đầu.
+
 ---
 
 ## F. Giả định đã đặt ra khi làm Pha 0

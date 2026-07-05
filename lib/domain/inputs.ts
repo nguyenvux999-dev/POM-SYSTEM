@@ -38,6 +38,24 @@ export interface LenhDraftInput {
 }
 
 /**
+ * Dữ liệu SỬA một lệnh (từ màn chi tiết đơn). `CongDoanCanLam` là MẢNG (repo nối ";").
+ * Server tự kiểm quyền trước khi ghi: trường ẢNH HƯỞNG LỊCH chỉ được ghi khi cho phép.
+ */
+export interface LenhEditInput {
+  // Vô hại
+  MoTaCongViec: string;
+  MaLSXXuong?: string;
+  DoUuTien: DoUuTien;
+  SoTrang?: number;
+  KhoGiay?: string;
+  KhoIn?: string;
+  // Ảnh hưởng lịch
+  CongDoanCanLam: string[];
+  BuHaoPhanTram?: number;
+  HanHoanThanh: string;
+}
+
+/**
  * Dữ liệu ghi một phát sinh (server tự set MaPhatSinh, ThoiGian, TrangThai=Moi,
  * NguoiCapNhat). MaLenh phải là lệnh đang tồn tại.
  */

@@ -34,6 +34,28 @@ class LichChayRepository extends BaseRepository<LichChay> {
     return all.filter((l) => l.MaLenh === maLenh);
   }
 
+  /**
+   * Có ít nhất 1 dòng LichChay trỏ tới lệnh không (SỰ THẬT dữ liệu con — dùng cho
+   * quy tắc sửa/xóa, thay vì tin cột TrangThai suy ra).
+   */
+  async coLichChay(maLenh: string): Promise<boolean> {
+    return (await this.findByLenh(maLenh)).length > 0;
+  }
+
+  /**
+   * Xóa TẤT CẢ dòng LichChay của một lệnh (dọn dữ liệu con khi xóa lệnh — không để
+   * lịch mồ côi). Trả về danh sách MaMay bị ảnh hưởng để gọi capNhatThuTuMay sau.
+   */
+  async xoaTheoLenh(maLenh: string): Promise<string[]> {
+    const ds = await this.findByLenh(maLenh);
+    const touched = new Set<string>();
+    for (const l of ds) {
+      if (l.MaMay) touched.add(l.MaMay);
+      await this.deleteByKey(l.MaLich);
+    }
+    return [...touched];
+  }
+
   /** Lịch có phần GIAO với khoảng [from, to] (chuỗi ngày/giờ). */
   async findInRange(from: string, to: string): Promise<LichChay[]> {
     const a = parseLocal(from).getTime();

@@ -13,6 +13,16 @@ class PhatSinhRepository extends BaseRepository<PhatSinh> {
     return all.filter((p) => p.MaLenh === maLenh);
   }
 
+  /**
+   * Xóa TẤT CẢ phát sinh của một lệnh (dọn kèm khi xóa lệnh — gồm cả marker
+   * "cần xếp lại" tự sinh — để không còn phát sinh mồ côi trỏ tới lệnh đã xóa).
+   */
+  async xoaTheoLenh(maLenh: string): Promise<number> {
+    const ds = await this.findByLenh(maLenh);
+    for (const p of ds) await this.deleteByKey(p.MaPhatSinh);
+    return ds.length;
+  }
+
   /** Phát sinh còn "mở" (Moi hoặc DangXuLy), mới nhất trước. */
   async findMoNhat(): Promise<PhatSinh[]> {
     const all = await this.findAll();

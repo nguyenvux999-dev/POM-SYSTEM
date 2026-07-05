@@ -22,6 +22,14 @@ class TienDoRepository extends BaseRepository<TienDo> {
     return all.filter((t) => t.MaLenh === maLenh);
   }
 
+  /**
+   * Có ít nhất 1 dòng TienDo trỏ tới lệnh không (SỰ THẬT: lệnh đã bắt đầu chạy /
+   * có tiến độ thật). Dùng cho quy tắc chặn sửa-ảnh-hưởng-lịch & chặn xóa.
+   */
+  async coTienDo(maLenh: string): Promise<boolean> {
+    return (await this.findByLenh(maLenh)).length > 0;
+  }
+
   /** Sinh MaLog dạng TD-NNN. */
   async generateMaLog(): Promise<string> {
     const all = await this.findAll();
@@ -61,6 +69,7 @@ const repo = new TienDoRepository({
 export const tienDoRepository = {
   findAll: () => repo.findAll(),
   findByLenh: (maLenh: string) => repo.findByLenh(maLenh),
+  coTienDo: (maLenh: string) => repo.coTienDo(maLenh),
   append: (log: TienDo) => repo.append(log),
   generateMaLog: () => repo.generateMaLog(),
   trangThaiHienTai: (maLenh: string, congDoan?: CongDoan) =>

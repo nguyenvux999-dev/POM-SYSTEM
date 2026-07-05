@@ -2,18 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { donHangRepository } from "@/lib/repositories/donHang";
 import { lenhSanXuatRepository } from "@/lib/repositories/lenhSanXuat";
-import { coTheXepLich } from "@/lib/domain/gate";
-import { NHAN_CONG_DOAN, NHAN_LENH_TRANG_THAI } from "@/lib/domain/labels";
-import { BU_HAO_MAC_DINH_PHAN_TRAM } from "@/lib/domain/config";
-import type { CongDoan } from "@/lib/domain/enums";
-import {
-  Badge,
-  BadgeDonHang,
-  BadgeFile,
-  BadgeUuTien,
-} from "@/components/status-badge";
-import { MaLenhHienThi, ThongSoChips } from "@/components/lenh-specs";
+import { lichChayRepository } from "@/lib/repositories/lichChay";
+import { tienDoRepository } from "@/lib/repositories/tienDo";
+import { moiLichDaXong, quyenSuaXoaLenh } from "@/lib/domain/gate";
+import type { LichChay } from "@/lib/domain/types";
+import { BadgeDonHang } from "@/components/status-badge";
 import { LenhManager } from "./lenh-manager";
+import { LenhList, type LenhCardVM } from "./lenh-list";
 
 export const dynamic = "force-dynamic";
 
@@ -28,23 +23,52 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function congDoanList(raw: string): CongDoan[] {
-  return raw
-    .split(";")
-    .map((s) => s.trim())
-    .filter((s): s is CongDoan => s.length > 0);
-}
-
 export default async function OrderDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const don = await donHangRepository.findById(id);
+  const [don, lenhList, lichAll, tienDoAll] = await Promise.all([
+    donHangRepository.findById(id),
+    lenhSanXuatRepository.findByMaDon(id),
+    lichChayRepository.findAll(),
+    tienDoRepository.findAll(),
+  ]);
   if (!don) notFound();
 
-  const lenhList = await lenhSanXuatRepository.findByMaDon(id);
+  // Nhóm dữ liệu con theo lệnh để tính QUYỀN sửa/xóa (theo sự thật, không tin cột).
+  const lichByLenh = new Map<string, LichChay[]>();
+  for (const l of lichAll) {
+    const arr = lichByLenh.get(l.MaLenh) ?? [];
+    arr.push(l);
+    lichByLenh.set(l.MaLenh, arr);
+  }
+  const coTienDoSet = new Set(tienDoAll.map((t) => t.MaLenh));
+
+  const lenhVMs: LenhCardVM[] = lenhList.map((l) => {
+    const lich = lichByLenh.get(l.MaLenh) ?? [];
+    return {
+      MaLenh: l.MaLenh,
+      MaLSXXuong: l.MaLSXXuong ?? "",
+      MoTaCongViec: l.MoTaCongViec,
+      CongDoanCanLam: l.CongDoanCanLam,
+      DoUuTien: l.DoUuTien,
+      HanHoanThanh: l.HanHoanThanh,
+      SoTrang: l.SoTrang ?? 0,
+      KhoGiay: l.KhoGiay ?? "",
+      KhoIn: l.KhoIn ?? "",
+      BuHaoPhanTram: l.BuHaoPhanTram ?? 0,
+      TrangThaiFile: l.TrangThaiFile,
+      TrangThai: l.TrangThai,
+      quyen: quyenSuaXoaLenh({
+        trangThai: l.TrangThai,
+        coLichChay: lich.length > 0,
+        coTienDo: coTienDoSet.has(l.MaLenh),
+        moiLichXong: moiLichDaXong(lich),
+      }),
+    };
+  });
 
   return (
     <div className="space-y-5">
@@ -84,65 +108,15 @@ export default async function OrderDetailPage({
         </div>
       </div>
 
-      {/* Lệnh sản xuất hiện có */}
+      {/* Lệnh sản xuất hiện có — có Sửa/Xóa theo quy tắc trạng thái */}
       <div className="rounded-lg border border-gray-200 bg-white p-4">
         <h2 className="mb-3 text-sm font-semibold text-gray-700">
-          Lệnh sản xuất ({lenhList.length})
+          Lệnh sản xuất ({lenhVMs.length})
         </h2>
-        {lenhList.length === 0 ? (
-          <p className="text-sm text-gray-400">
-            Chưa có lệnh. Tạo lệnh bên dưới (mặc định 1 lệnh, có thể thêm nhiều).
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {lenhList.map((l) => (
-              <div
-                key={l.MaLenh}
-                className="rounded-md border border-gray-200 p-3"
-              >
-                <div className="flex flex-wrap items-center gap-2">
-                  <MaLenhHienThi maLenh={l.MaLenh} maLSXXuong={l.MaLSXXuong} />
-                  <BadgeFile value={l.TrangThaiFile} />
-                  <BadgeUuTien value={l.DoUuTien} />
-                  <Badge tone="gray">
-                    {NHAN_LENH_TRANG_THAI[l.TrangThai]}
-                  </Badge>
-                  {coTheXepLich(l) && <Badge tone="green">Sẵn sàng xếp lịch</Badge>}
-                </div>
-                {l.MoTaCongViec && (
-                  <p className="mt-1 text-sm text-gray-600">{l.MoTaCongViec}</p>
-                )}
-                {/* Thông số kỹ thuật: số màu/loại giấy từ đơn; khổ giấy/khổ in/số trang từ lệnh. */}
-                <div className="mt-2">
-                  <ThongSoChips
-                    SoMau={don.SoMau}
-                    LoaiGiay={don.LoaiGiay}
-                    KhoGiay={l.KhoGiay}
-                    KhoIn={l.KhoIn}
-                    SoTrang={l.SoTrang}
-                  />
-                </div>
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {congDoanList(l.CongDoanCanLam).map((cd, i) => (
-                    <span
-                      key={`${cd}-${i}`}
-                      className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-600"
-                    >
-                      {i + 1}. {NHAN_CONG_DOAN[cd] ?? cd}
-                    </span>
-                  ))}
-                </div>
-                <p className="mt-1 text-xs text-gray-500">
-                  {l.HanHoanThanh && <>Hạn hoàn thành: {l.HanHoanThanh} · </>}
-                  Bù hao:{" "}
-                  {l.BuHaoPhanTram && l.BuHaoPhanTram > 0
-                    ? `${l.BuHaoPhanTram}%`
-                    : `${BU_HAO_MAC_DINH_PHAN_TRAM}% (mặc định)`}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
+        <LenhList
+          lenhs={lenhVMs}
+          don={{ SoMau: don.SoMau, LoaiGiay: don.LoaiGiay }}
+        />
       </div>
 
       {/* Tạo lệnh (1 → N) */}
