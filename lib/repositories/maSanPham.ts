@@ -57,6 +57,25 @@ class MaSanPhamRepository extends BaseRepository<MaSanPham> {
     return this.insert(row);
   }
 
+  /**
+   * Sửa NỘI DUNG một dòng mã sản phẩm, tự set audit. Chỉ nhận 4 trường mô tả —
+   * khóa MaDongSP/MaLenh KHÔNG bao giờ đổi qua lối này (whitelist từng trường).
+   */
+  async update(
+    maDongSP: string,
+    input: Omit<MaSanPhamCreateInput, "MaLenh">,
+    actorEmail: string,
+  ): Promise<MaSanPham> {
+    return this.updateByKey(maDongSP, {
+      MaSanPham: input.MaSanPham,
+      TenSanPham: input.TenSanPham,
+      KichThuoc: input.KichThuoc,
+      SoLuong: input.SoLuong,
+      NguoiCapNhat: actorEmail,
+      NgayCapNhat: nowStamp(),
+    });
+  }
+
   /** Xóa TẤT CẢ mã sản phẩm của một lệnh (dọn kèm khi xóa lệnh). */
   async xoaTheoLenh(maLenh: string): Promise<number> {
     const ds = await this.findByLenh(maLenh);

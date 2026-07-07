@@ -11,8 +11,10 @@ import { maSanPhamRepository } from "@/lib/repositories/maSanPham";
 import { RepositoryError } from "@/lib/repositories/base";
 import {
   moiLichDaXong,
+  quyenSuaMaSP,
   quyenSuaXoaLenh,
   suyTrangThaiDonTuLenh,
+  type QuyenMaSP,
 } from "@/lib/domain/gate";
 import type { LenhSanXuat } from "@/lib/domain/types";
 import type {
@@ -302,6 +304,154 @@ export async function xoaLenh(
     }
 
     revalidateLenh(maDon);
+    return { ok: true };
+  } catch (e) {
+    if (e instanceof RepositoryError) return loi(e.message);
+    return loi(e instanceof Error ? e.message : String(e));
+  }
+}
+
+// ---------------------------------------------------------------------------
+// SỬA / THÊM / XÓA mã sản phẩm (dòng MaSanPham) của một lệnh ĐÃ TẠO.
+// Mã SP thuần MÔ TẢ — không nuôi công thức thời lượng (giờ in bám SoToIn cấp
+// lệnh) nên các action này KHÔNG đánh dấu "cần xếp lại", KHÔNG tính lại lịch,
+// KHÔNG đổi trạng thái lệnh/đơn.
+// ---------------------------------------------------------------------------
+
+/** Mã SP chỉ hiển thị ở các trang đơn hàng — KHÔNG revalidate trang lịch/tiến độ. */
+function revalidateMaSP(maDon: string): void {
+  revalidatePath(`/don-hang/${maDon}`);
+  revalidatePath("/don-hang");
+}
+
+/** Validate nội dung một dòng mã SP (dùng chung thêm/sửa — UI cũng kiểm trước). */
+function validateNoiDungMaSP(input: MaSanPhamInput): string | null {
+  if (!input.MaSanPham?.trim() && !input.TenSanPham?.trim()) {
+    return "Cần nhập Mã SP hoặc Tên sản phẩm.";
+  }
+  if (!Number.isFinite(input.SoLuong) || input.SoLuong <= 0) {
+    return "Số lượng phải là số > 0.";
+  }
+  return null;
+}
+
+/**
+ * Quyền thao tác mã SP của một lệnh theo DỮ LIỆU CON THẬT (không tin UI):
+ * tái dùng quyenSuaXoaLenh (coLichChay/coTienDo/HoanThanh) rồi suy quyenSuaMaSP.
+ * Lệnh không tồn tại → null.
+ */
+async function quyenMaSPCuaLenh(
+  maLenh: string,
+): Promise<{ maDon: string; quyenMa: QuyenMaSP } | null> {
+  const lenh = await lenhSanXuatRepository.findById(maLenh);
+  if (!lenh) return null;
+  const [lichCuaLenh, coTienDo] = await Promise.all([
+    lichChayRepository.findByLenh(maLenh),
+    tienDoRepository.coTienDo(maLenh),
+  ]);
+  const quyen = quyenSuaXoaLenh({
+    trangThai: lenh.TrangThai,
+    coLichChay: lichCuaLenh.length > 0,
+    coTienDo,
+    moiLichXong: moiLichDaXong(lichCuaLenh),
+  });
+  return { maDon: lenh.MaDon, quyenMa: quyenSuaMaSP(quyen.muc) };
+}
+
+/** THÊM một mã sản phẩm vào lệnh đã tạo (MaDongSP mới do repo sinh, dạng MSP-NNN). */
+export async function themMaSP(
+  maLenh: string,
+  input: MaSanPhamInput,
+): Promise<{ ok: true; maDongSP: string } | { ok: false; error: string }> {
+  try {
+    const invalid = validateNoiDungMaSP(input);
+    if (invalid) return loi(invalid);
+
+    const ctx = await quyenMaSPCuaLenh(maLenh);
+    if (!ctx) return loi(`Không tồn tại lệnh ${maLenh}.`);
+    if (!ctx.quyenMa.themXoaDuoc) {
+      return loi(ctx.quyenMa.lyDoKhoa ?? "Không thể thêm mã sản phẩm.");
+    }
+
+    const email = await actorEmail();
+    const created = await maSanPhamRepository.create(
+      {
+        MaLenh: maLenh,
+        MaSanPham: input.MaSanPham?.trim() ?? "",
+        TenSanPham: input.TenSanPham?.trim() ?? "",
+        KichThuoc: input.KichThuoc?.trim() ?? "",
+        SoLuong: input.SoLuong,
+      },
+      email,
+    );
+
+    revalidateMaSP(ctx.maDon);
+    return { ok: true, maDongSP: created.MaDongSP };
+  } catch (e) {
+    if (e instanceof RepositoryError) return loi(e.message);
+    return loi(e instanceof Error ? e.message : String(e));
+  }
+}
+
+/** SỬA nội dung một mã sản phẩm (khóa MaDongSP/MaLenh KHÔNG đổi). */
+export async function suaMaSP(
+  maDongSP: string,
+  input: MaSanPhamInput,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const invalid = validateNoiDungMaSP(input);
+    if (invalid) return loi(invalid);
+
+    const dong = await maSanPhamRepository.findById(maDongSP);
+    if (!dong) return loi(`Không tồn tại dòng mã sản phẩm ${maDongSP}.`);
+    const ctx = await quyenMaSPCuaLenh(dong.MaLenh);
+    if (!ctx) return loi(`Không tồn tại lệnh ${dong.MaLenh}.`);
+    if (!ctx.quyenMa.suaDuoc) {
+      return loi(ctx.quyenMa.lyDoKhoa ?? "Không thể sửa mã sản phẩm.");
+    }
+
+    const email = await actorEmail();
+    await maSanPhamRepository.update(
+      maDongSP,
+      {
+        MaSanPham: input.MaSanPham?.trim() ?? "",
+        TenSanPham: input.TenSanPham?.trim() ?? "",
+        KichThuoc: input.KichThuoc?.trim() ?? "",
+        SoLuong: input.SoLuong,
+      },
+      email,
+    );
+
+    revalidateMaSP(ctx.maDon);
+    return { ok: true };
+  } catch (e) {
+    if (e instanceof RepositoryError) return loi(e.message);
+    return loi(e instanceof Error ? e.message : String(e));
+  }
+}
+
+/** XÓA một mã sản phẩm. Lệnh luôn phải còn TỐI THIỂU 1 mã → chặn xóa dòng cuối. */
+export async function xoaMaSP(
+  maDongSP: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const dong = await maSanPhamRepository.findById(maDongSP);
+    if (!dong) return loi(`Không tồn tại dòng mã sản phẩm ${maDongSP}.`);
+    const ctx = await quyenMaSPCuaLenh(dong.MaLenh);
+    if (!ctx) return loi(`Không tồn tại lệnh ${dong.MaLenh}.`);
+    if (!ctx.quyenMa.themXoaDuoc) {
+      return loi(ctx.quyenMa.lyDoKhoa ?? "Không thể xóa mã sản phẩm.");
+    }
+
+    // Bất biến: mỗi lệnh có ít nhất 1 mã — kiểm ở server, KHÔNG tin UI.
+    const dsCungLenh = await maSanPhamRepository.findByLenh(dong.MaLenh);
+    if (dsCungLenh.length <= 1) {
+      return loi("Lệnh phải có ít nhất 1 mã sản phẩm — không thể xóa dòng cuối cùng.");
+    }
+
+    await maSanPhamRepository.deleteByKey(maDongSP);
+
+    revalidateMaSP(ctx.maDon);
     return { ok: true };
   } catch (e) {
     if (e instanceof RepositoryError) return loi(e.message);

@@ -162,6 +162,20 @@ Tab `00_HuongDan` (nếu có) được app **bỏ qua**.
 - **Đánh dấu cần xếp lại**: khi sửa trường ảnh hưởng lịch trên lệnh đã xếp, hệ thống tạo một `PhatSinh` `AnhHuongTienDo=true` (tái dùng cơ chế suy-ra ở Pha 3, **không thêm enum/cột**) → lệnh xuất hiện trong `/phat-sinh` "Cần xếp lại".
 - **Xóa dọn dữ liệu con**: xóa lệnh sẽ xóa kèm **mọi `LichChay`** (không để lịch mồ côi trên bảng xếp lịch), **mọi `PhatSinh`** và **mọi `MaSanPham`** của lệnh, cập nhật lại `ThuTu` máy bị đụng, rồi **tính lại `TrangThai` đơn cha** (vd không còn lệnh nào → `Moi`; không đụng đơn `Huy`/`TreHen`). `TienDo` không bị xóa vì lệnh có tiến độ đã bị chặn xóa từ đầu.
 
+### Sửa / Thêm / Xóa mã sản phẩm trong lệnh (sau khi lệnh đã tạo)
+
+Ở bảng "Mã sản phẩm trong lệnh" (`/don-hang/[id]`): mỗi dòng có nút **Sửa** (inline) / **Xóa**, kèm nút **＋ Thêm mã**. Mã SP **thuần mô tả**, KHÔNG nuôi công thức thời lượng (giờ in bám `SoToIn` cấp lệnh) → mọi thao tác ở đây **KHÔNG kích "cần xếp lại"**, không tính lại thời lượng, không đổi trạng thái lệnh/đơn, không revalidate các trang lịch.
+
+Chặn theo trạng thái LỆNH cha, kiểm theo dữ liệu thật (tái dùng `quyenSuaXoaLenh` → `quyenSuaMaSP` trong `lib/domain/gate.ts`), **hai tầng** (UI khóa nút + Server Action kiểm lại):
+
+| Mức lệnh | Sửa nội dung dòng | Thêm / Xóa dòng |
+|---|---|---|
+| Hoàn thành (hoặc mọi công đoạn Xong) | ❌ khóa (dữ liệu lịch sử) | ❌ khóa |
+| Đang chạy (`coTienDo`) | ✅ | ✅ + **cảnh báo mềm** "mẻ in đã cố định" (planner quyết) |
+| Chưa chạy (ChoLenLich / DaLenLich) | ✅ tự do | ✅ tự do |
+
+Validate (cả UI lẫn server): `MaLenh` phải tồn tại; cần nhập Mã SP hoặc Tên; `SoLuong` > 0; khóa `MaDongSP`/`MaLenh` không đổi khi sửa; thêm mới sinh `MaDongSP` (`MSP-NNN`); **mỗi lệnh luôn còn tối thiểu 1 mã** → chặn xóa dòng cuối (server chặn cả khi gọi thẳng action, không tin UI). UI optimistic: đổi ngay, ghi nền, lỗi thì rollback.
+
 ---
 
 ## F. Giả định đã đặt ra khi làm Pha 0

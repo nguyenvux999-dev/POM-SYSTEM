@@ -127,6 +127,50 @@ export function quyenSuaXoaLenh(input: {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Quy tắc sửa/thêm/xóa MÃ SẢN PHẨM (dòng MaSanPham) của một lệnh
+// ---------------------------------------------------------------------------
+
+/** Cảnh báo MỀM khi thêm/xóa mã trên lệnh đang chạy (chỉ hiển thị, KHÔNG chặn). */
+export const CANH_BAO_THEM_XOA_MA_SP =
+  "Lệnh đang chạy, mẻ in đã cố định — chỉ thêm/xóa mã nếu sửa sai dữ liệu nhập.";
+
+export interface QuyenMaSP {
+  /** Được sửa nội dung dòng (MaSanPham/TenSanPham/KichThuoc/SoLuong). */
+  suaDuoc: boolean;
+  /** Được thêm dòng mới / xóa dòng (xóa còn bị chặn riêng khi là dòng cuối). */
+  themXoaDuoc: boolean;
+  /** Thêm/xóa cần hiện cảnh báo mềm (lệnh đang chạy) nhưng VẪN cho phép. */
+  canhBaoThemXoa: boolean;
+  /** Lý do khi bị khóa hoàn toàn (HoanThanh). */
+  lyDoKhoa?: string;
+}
+
+/**
+ * Quyền sửa/thêm/xóa mã sản phẩm suy từ MỨC của lệnh cha (kết quả quyenSuaXoaLenh
+ * trên dữ liệu con thật). Mã SP thuần mô tả — KHÔNG nuôi công thức thời lượng
+ * (giờ in bám SoToIn cấp lệnh) nên mọi thao tác ở đây KHÔNG kích "cần xếp lại".
+ *  - HoanThanh → khóa hoàn toàn (dữ liệu lịch sử).
+ *  - DaChay (có tiến độ) → sửa tự do; thêm/xóa được nhưng kèm cảnh báo mềm.
+ *  - Còn lại (chưa chạy) → tự do.
+ */
+export function quyenSuaMaSP(muc: MucLenh): QuyenMaSP {
+  if (muc === "HoanThanh") {
+    return {
+      suaDuoc: false,
+      themXoaDuoc: false,
+      canhBaoThemXoa: false,
+      lyDoKhoa:
+        "Lệnh đã hoàn thành — mã sản phẩm là dữ liệu lịch sử, chỉ đọc.",
+    };
+  }
+  return {
+    suaDuoc: true,
+    themXoaDuoc: true,
+    canhBaoThemXoa: muc === "DaChay",
+  };
+}
+
 /**
  * Suy TrangThai ĐƠN từ tập lệnh CÒN LẠI (dùng sau khi xóa lệnh cho nhất quán).
  * KHÔNG áp cho đơn Huy/TreHen (do người đặt tay) — xử lý ở tầng gọi.

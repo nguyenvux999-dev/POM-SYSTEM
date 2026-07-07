@@ -24,15 +24,7 @@ import {
 } from "@/components/status-badge";
 import { MaLenhHienThi, ThongSoChips } from "@/components/lenh-specs";
 import { suaLenh, xoaLenh } from "../actions";
-
-/** Một dòng mã sản phẩm để hiển thị (thuần mô tả). */
-export interface MaSanPhamRow {
-  MaDongSP: string;
-  MaSanPham: string;
-  TenSanPham: string;
-  KichThuoc: string;
-  SoLuong: number;
-}
+import { MaSanPhamTable, type MaSanPhamRow } from "./ma-san-pham-table";
 
 /** VM một lệnh cho danh sách sửa/xóa (dựng ở server, kèm quyền đã tính). */
 export interface LenhCardVM {
@@ -257,33 +249,13 @@ function LenhCard({
               : `${BU_HAO_MAC_DINH_PHAN_TRAM}% (mặc định)`}
           </p>
 
-          {/* Mã sản phẩm trong lệnh (bảng con, mô tả) */}
-          {lenh.maSanPham.length > 0 && (
-            <div className="mt-2 overflow-x-auto rounded-md border border-gray-100">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-gray-50 text-gray-500">
-                  <tr>
-                    <th className="px-2 py-1">Mã SP</th>
-                    <th className="px-2 py-1">Tên</th>
-                    <th className="px-2 py-1">Kích thước</th>
-                    <th className="px-2 py-1 text-right">SL</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {lenh.maSanPham.map((m) => (
-                    <tr key={m.MaDongSP}>
-                      <td className="px-2 py-1 font-mono">{m.MaSanPham || "—"}</td>
-                      <td className="px-2 py-1">{m.TenSanPham || "—"}</td>
-                      <td className="px-2 py-1">{m.KichThuoc || "—"}</td>
-                      <td className="px-2 py-1 text-right">
-                        {m.SoLuong ? m.SoLuong.toLocaleString() : "—"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          {/* Mã sản phẩm trong lệnh (bảng con, mô tả) — sửa/thêm/xóa theo quyền
+              của lệnh cha; thao tác KHÔNG ảnh hưởng lịch (giờ in bám SoToIn). */}
+          <MaSanPhamTable
+            maLenh={lenh.MaLenh}
+            initial={lenh.maSanPham}
+            muc={q.muc}
+          />
 
           {/* Nút hành động theo quyền */}
           {mode === "view" && !q.chiDoc && (
