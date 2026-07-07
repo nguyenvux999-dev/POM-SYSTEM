@@ -1,16 +1,40 @@
 import Link from "next/link";
 import { donHangRepository } from "@/lib/repositories/donHang";
 import { lenhSanXuatRepository } from "@/lib/repositories/lenhSanXuat";
+import { maSanPhamRepository } from "@/lib/repositories/maSanPham";
 import {
   DON_HANG_TRANG_THAI,
   type DonHangTrangThai,
 } from "@/lib/domain/enums";
-import type { LenhSanXuat } from "@/lib/domain/types";
+import type { LenhSanXuat, MaSanPham } from "@/lib/domain/types";
 import { NHAN_DON_HANG_TRANG_THAI } from "@/lib/domain/labels";
 import { BadgeDonHang, BadgeLenh } from "@/components/status-badge";
 import { MaLenhHienThi } from "@/components/lenh-specs";
 
 export const dynamic = "force-dynamic";
+
+/**
+ * Ô "Mã sản phẩm" của một đơn: 0 mã → "—"; 1 mã → hiện mã; nhiều mã → mã đầu
+ * + "+N mã", title (hover) liệt kê đầy đủ. Dòng không có mã thì dùng tên thay.
+ */
+function MaSanPhamCell({ ds }: { ds: MaSanPham[] }) {
+  const nhan = ds
+    .map((m) => m.MaSanPham || m.TenSanPham)
+    .filter((s) => s.trim() !== "");
+  if (nhan.length === 0) {
+    return <span className="text-xs text-gray-400">—</span>;
+  }
+  return (
+    <span className="font-mono text-xs" title={nhan.join(", ")}>
+      {nhan[0]}
+      {nhan.length > 1 && (
+        <span className="ml-1 font-sans text-gray-400">
+          +{nhan.length - 1} mã
+        </span>
+      )}
+    </span>
+  );
+}
 
 function parseTrangThai(v: string | undefined): DonHangTrangThai | undefined {
   return v && (DON_HANG_TRANG_THAI as readonly string[]).includes(v)
@@ -31,13 +55,21 @@ export default async function DonHangListPage({
   const trangThai = parseTrangThai(sp.trangThai);
   const khachHang = sp.khachHang?.trim() || undefined;
   const lsx = sp.lsx?.trim() || undefined;
-  const [donRows, lenhAll] = await Promise.all([
+  const [donRows, lenhAll, maSanPhamAll] = await Promise.all([
     donHangRepository.filter({ trangThai, khachHang }),
     lenhSanXuatRepository.findAll(),
+    maSanPhamRepository.findAll(),
   ]);
   // Mô hình 1–1: mỗi đơn có 0/1 lệnh → map MaDon → lệnh để hiện nhanh trên danh sách.
   const lenhByDon = new Map<string, LenhSanXuat>();
   for (const l of lenhAll) lenhByDon.set(l.MaDon, l);
+  // Join MaSanPham theo MaLenh trong RAM (đọc cả tab 1 lần qua cache, không gọi theo dòng).
+  const maSPByLenh = new Map<string, MaSanPham[]>();
+  for (const m of maSanPhamAll) {
+    const arr = maSPByLenh.get(m.MaLenh) ?? [];
+    arr.push(m);
+    maSPByLenh.set(m.MaLenh, arr);
+  }
 
   // Lọc theo mã Lệnh (LSX): khớp MaLSXXuong HOẶC MaLenh (chứa, không phân biệt hoa thường).
   const rows = lsx
@@ -123,6 +155,7 @@ export default async function DonHangListPage({
               <th className="px-3 py-2">Ngày nhận</th>
               <th className="px-3 py-2">Khách hàng</th>
               <th className="px-3 py-2">Sản phẩm</th>
+              <th className="px-3 py-2">Mã sản phẩm</th>
               <th className="px-3 py-2">SL</th>
               <th className="px-3 py-2">Giao hàng</th>
               <th className="px-3 py-2">Lệnh (LSX)</th>
@@ -144,6 +177,15 @@ export default async function DonHangListPage({
                 <td className="px-3 py-2">{d.NgayNhan}</td>
                 <td className="px-3 py-2">{d.KhachHang}</td>
                 <td className="px-3 py-2">{d.TenSanPham}</td>
+                <td className="px-3 py-2">
+                  <MaSanPhamCell
+                    ds={
+                      lenhByDon.has(d.MaDon)
+                        ? (maSPByLenh.get(lenhByDon.get(d.MaDon)!.MaLenh) ?? [])
+                        : []
+                    }
+                  />
+                </td>
                 <td className="px-3 py-2">{d.SoLuong.toLocaleString()}</td>
                 <td className="px-3 py-2">{d.NgayGiaoHang}</td>
                 <td className="px-3 py-2">
@@ -171,7 +213,7 @@ export default async function DonHangListPage({
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-3 py-6 text-center text-gray-400">
+                <td colSpan={10} className="px-3 py-6 text-center text-gray-400">
                   Không có đơn hàng nào khớp bộ lọc.
                 </td>
               </tr>
