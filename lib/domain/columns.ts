@@ -123,6 +123,25 @@ export const MA_SAN_PHAM_COLUMNS = [
   "NgayCapNhat",
 ] as const;
 
+/**
+ * Tab `ThuVienSanPham` — thư viện tra cứu mã sản phẩm kèm ảnh (product master).
+ * Module ĐỘC LẬP, KHÔNG nối vào lệnh/xếp lịch/tiến độ. Ảnh lưu trên Vercel Blob,
+ * sheet chỉ giữ URL (cột AnhUrl).
+ * Lưu ý: NguoiCapNhat đứng CUỐI vì sheet được tạo trước khi có cột này —
+ * seed sẽ append cột thiếu vào cuối header (idempotent).
+ */
+export const THU_VIEN_SAN_PHAM_COLUMNS = [
+  "MaSanPham",
+  "TenSanPham",
+  "KhachHang",
+  "AnhUrl",
+  "KhoThanhPham",
+  "LoaiGiay",
+  "GhiChu",
+  "NgayCapNhat",
+  "NguoiCapNhat",
+] as const;
+
 /** Bảng đăng ký 7 tab (dùng cho seed: tạo tab + ghi header đúng thứ tự). */
 export const TAB_SCHEMAS: ReadonlyArray<{
   tab: string;
@@ -136,6 +155,7 @@ export const TAB_SCHEMAS: ReadonlyArray<{
   { tab: "PhatSinh", columns: PHAT_SINH_COLUMNS },
   { tab: "NguoiDung", columns: NGUOI_DUNG_COLUMNS },
   { tab: "MaSanPham", columns: MA_SAN_PHAM_COLUMNS },
+  { tab: "ThuVienSanPham", columns: THU_VIEN_SAN_PHAM_COLUMNS },
 ];
 
 /**

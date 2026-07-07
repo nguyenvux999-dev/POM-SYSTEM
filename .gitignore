@@ -37,3 +37,5 @@ gcp-key*.json
 .vscode/*
 !.vscode/extensions.json
 .idea
+.vercel
+.env*

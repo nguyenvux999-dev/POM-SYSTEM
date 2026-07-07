@@ -90,6 +90,24 @@ export interface MaSanPham {
   NgayCapNhat: string;
 }
 
+/**
+ * Tab `ThuVienSanPham` — thư viện tra cứu mã sản phẩm kèm ảnh (product master).
+ * Khóa chính: MaSanPham. Module ĐỘC LẬP — không FK tới lệnh/đơn/lịch.
+ */
+export interface ThuVienSanPham {
+  MaSanPham: string;
+  TenSanPham: string;
+  KhachHang: string;
+  /** URL ảnh công khai trên Vercel Blob; trống = chưa có ảnh (UI hiện placeholder). */
+  AnhUrl: string;
+  KhoThanhPham: string;
+  LoaiGiay: string;
+  GhiChu: string;
+  NgayCapNhat: string;
+  /** Tùy chọn vì sheet cũ có thể chưa có cột này (seed sẽ bổ sung vào cuối header). */
+  NguoiCapNhat?: string;
+}
+
 /** Tab `May` — Máy móc & năng lực. Khóa chính: MaMay. */
 export interface May {
   MaMay: string;

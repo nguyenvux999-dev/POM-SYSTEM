@@ -43,4 +43,10 @@ export const NAV_ITEMS: NavItem[] = [
     icon: "📊",
     desc: "Báo cáo realtime & xuất Excel",
   },
+  {
+    href: "/thu-vien",
+    label: "Thư viện SP",
+    icon: "📚",
+    desc: "Tra cứu mã sản phẩm kèm ảnh",
+  },
 ];
