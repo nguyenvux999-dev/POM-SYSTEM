@@ -6,32 +6,9 @@ import { DON_HANG_TRANG_THAI, type DonHangTrangThai } from "@/lib/domain/enums";
 import type { LenhSanXuat, MaSanPham } from "@/lib/domain/types";
 import { NHAN_DON_HANG_TRANG_THAI } from "@/lib/domain/labels";
 import { BadgeDonHang, BadgeLenh } from "@/components/status-badge";
-import { MaLenhHienThi } from "@/components/lenh-specs";
+import { MaLenhHienThi, MaSPHienThi, nhanMaSP } from "@/components/lenh-specs";
 
 export const dynamic = "force-dynamic";
-
-/**
- * Ô "Mã sản phẩm" của một đơn: 0 mã → "—"; 1 mã → hiện mã; nhiều mã → mã đầu
- * + "+N mã", title (hover) liệt kê đầy đủ. Dòng không có mã thì dùng tên thay.
- */
-function MaSanPhamCell({ ds }: { ds: MaSanPham[] }) {
-  const nhan = ds
-    .map((m) => m.MaSanPham || m.TenSanPham)
-    .filter((s) => s.trim() !== "");
-  if (nhan.length === 0) {
-    return <span className="text-xs text-gray-400">—</span>;
-  }
-  return (
-    <span className="font-mono text-xs" title={nhan.join(", ")}>
-      {nhan[0]}
-      {nhan.length > 1 && (
-        <span className="ml-1 font-sans text-gray-400">
-          +{nhan.length - 1} mã
-        </span>
-      )}
-    </span>
-  );
-}
 
 function parseTrangThai(v: string | undefined): DonHangTrangThai | undefined {
   return v && (DON_HANG_TRANG_THAI as readonly string[]).includes(v)
@@ -176,12 +153,12 @@ export default async function DonHangListPage({
                 <td className="px-3 py-2">{d.KhachHang}</td>
                 <td className="px-3 py-2">{d.TenSanPham}</td>
                 <td className="px-3 py-2">
-                  <MaSanPhamCell
-                    ds={
+                  <MaSPHienThi
+                    nhan={nhanMaSP(
                       lenhByDon.has(d.MaDon)
                         ? (maSPByLenh.get(lenhByDon.get(d.MaDon)!.MaLenh) ?? [])
-                        : []
-                    }
+                        : [],
+                    )}
                   />
                 </td>
                 <td className="px-3 py-2">{d.SoLuong.toLocaleString()}</td>

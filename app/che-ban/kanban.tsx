@@ -9,7 +9,13 @@ import {
 import { NHAN_TRANG_THAI_FILE } from "@/lib/domain/labels";
 import { coTheXepLich } from "@/lib/domain/gate";
 import { BadgeUuTien } from "@/components/status-badge";
-import { MaLenhHienThi, ThongSoChips } from "@/components/lenh-specs";
+import {
+  khopTimKiem,
+  MaLenhHienThi,
+  MaSPHienThi,
+  ThongSoChips,
+} from "@/components/lenh-specs";
+import { OTimKiemLenh } from "@/components/lenh-search";
 import { capNhatTrangThaiFile } from "./actions";
 
 export interface TheLenh {
@@ -26,13 +32,21 @@ export interface TheLenh {
   KhoGiay: string;
   KhoIn: string;
   SoTrang: number;
+  /** Nhãn các mã SP thuộc lệnh (hiển thị "mã đầu +N mã"). */
+  MaSP: string[];
+  /** Chuỗi tìm kiếm dựng sẵn ở server (xem chuoiTimKiemLenh). */
+  TimKiem: string;
 }
 
 export function Kanban({ cards: initial }: { cards: TheLenh[] }) {
   const [cards, setCards] = useState<TheLenh[]>(initial);
   const [error, setError] = useState<string | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
+  const [tuKhoa, setTuKhoa] = useState("");
   const [, startTransition] = useTransition();
+
+  // Tìm kiếm chỉ LỌC hiển thị (client, tức thì) — chồng lên phân cột trạng thái.
+  const cardsHien = cards.filter((c) => khopTimKiem(c.TimKiem, tuKhoa));
 
   function move(maLenh: string, target: TrangThaiFile) {
     const prev = cards;
@@ -58,17 +72,20 @@ export function Kanban({ cards: initial }: { cards: TheLenh[] }) {
   }
 
   return (
-    // Khung kanban: dải cột cuộn NGANG; mỗi cột cao theo khung và cuộn DỌC riêng.
-    <div className="flex h-full min-h-0 flex-col">
+    // Khung kanban: ô tìm cố định trên đỉnh; dải cột cuộn NGANG; mỗi cột cao
+    // theo khung và cuộn DỌC riêng.
+    <div className="flex h-full min-h-0 flex-col gap-3">
+      <OTimKiemLenh value={tuKhoa} onChange={setTuKhoa} />
+
       {error && (
-        <div className="mb-3 shrink-0 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-700">
+        <div className="shrink-0 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-700">
           {error}
         </div>
       )}
 
       <div className="flex min-h-0 flex-1 gap-3 overflow-x-auto pb-1">
         {TRANG_THAI_FILE.map((col) => {
-          const colCards = cards.filter((c) => c.TrangThaiFile === col);
+          const colCards = cardsHien.filter((c) => c.TrangThaiFile === col);
           return (
             <div
               key={col}
@@ -112,6 +129,9 @@ export function Kanban({ cards: initial }: { cards: TheLenh[] }) {
                       {c.TenSanPham || "—"}
                     </p>
                     <p className="text-xs text-gray-500">{c.KhachHang}</p>
+                    <p className="mt-0.5">
+                      <MaSPHienThi nhan={c.MaSP} />
+                    </p>
                     <div className="mt-1">
                       <ThongSoChips
                         SoMau={c.SoMau}

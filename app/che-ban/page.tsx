@@ -1,18 +1,31 @@
 import { lenhSanXuatRepository } from "@/lib/repositories/lenhSanXuat";
 import { donHangRepository } from "@/lib/repositories/donHang";
+import { maSanPhamRepository } from "@/lib/repositories/maSanPham";
+import type { MaSanPham } from "@/lib/domain/types";
+import { chuoiTimKiemLenh, nhanMaSP } from "@/components/lenh-specs";
 import { Kanban, type TheLenh } from "./kanban";
 
 export const dynamic = "force-dynamic";
 
 export default async function CheBanPage() {
-  const [lenhList, donList] = await Promise.all([
+  const [lenhList, donList, maSanPhamAll] = await Promise.all([
     lenhSanXuatRepository.findAll(),
     donHangRepository.findAll(),
+    maSanPhamRepository.findAll(),
   ]);
   const donMap = new Map(donList.map((d) => [d.MaDon, d]));
+  // Join MaSanPham theo MaLenh trong RAM (đọc cả tab 1 lần qua cache,
+  // không gọi API theo từng lệnh).
+  const maSPByLenh = new Map<string, MaSanPham[]>();
+  for (const m of maSanPhamAll) {
+    const arr = maSPByLenh.get(m.MaLenh) ?? [];
+    arr.push(m);
+    maSPByLenh.set(m.MaLenh, arr);
+  }
 
   const cards: TheLenh[] = lenhList.map((l) => {
     const d = donMap.get(l.MaDon);
+    const maSP = maSPByLenh.get(l.MaLenh) ?? [];
     return {
       MaLenh: l.MaLenh,
       MaDon: l.MaDon,
@@ -27,6 +40,13 @@ export default async function CheBanPage() {
       KhoGiay: l.KhoGiay ?? "",
       KhoIn: l.KhoIn ?? "",
       SoTrang: l.SoTrang ?? 0,
+      MaSP: nhanMaSP(maSP),
+      TimKiem: chuoiTimKiemLenh({
+        tenSanPham: d?.TenSanPham,
+        maLenh: l.MaLenh,
+        maLSXXuong: l.MaLSXXuong,
+        maSP,
+      }),
     };
   });
 

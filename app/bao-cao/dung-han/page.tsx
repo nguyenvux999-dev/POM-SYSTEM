@@ -2,10 +2,13 @@ import Link from "next/link";
 import { donHangRepository } from "@/lib/repositories/donHang";
 import { lenhSanXuatRepository } from "@/lib/repositories/lenhSanXuat";
 import { tienDoRepository } from "@/lib/repositories/tienDo";
+import { maSanPhamRepository } from "@/lib/repositories/maSanPham";
+import type { MaSanPham } from "@/lib/domain/types";
 import { tyLeDungHan } from "@/lib/domain/report";
 import { cuoiThang, dauThang, todayVN } from "@/lib/domain/datetime";
 import { DateRange } from "@/components/date-range";
 import { ExportButtons } from "@/components/export-button";
+import { MaSPHienThi, nhanMaSP } from "@/components/lenh-specs";
 
 export const dynamic = "force-dynamic";
 
@@ -18,13 +21,27 @@ export default async function DungHanPage({
   const homNay = todayVN();
   const thang = (from ?? homNay).slice(0, 7);
 
-  const [dons, lenhs, tienDoAll] = await Promise.all([
+  const [dons, lenhs, tienDoAll, maSanPhamAll] = await Promise.all([
     donHangRepository.findAll(),
     lenhSanXuatRepository.findAll(),
     tienDoRepository.findAll(),
+    maSanPhamRepository.findAll(),
   ]);
 
   const kq = tyLeDungHan({ thang, dons, lenhs, tienDoAll, homNay });
+
+  // Join đơn → lệnh (1–1) → mã SP trong RAM, chỉ để hiển thị cột "Mã SP".
+  const lenhByDon = new Map(lenhs.map((l) => [l.MaDon, l]));
+  const maSPGop = new Map<string, MaSanPham[]>();
+  for (const m of maSanPhamAll) {
+    const arr = maSPGop.get(m.MaLenh) ?? [];
+    arr.push(m);
+    maSPGop.set(m.MaLenh, arr);
+  }
+  const nhanSPTheoDon = (maDon: string) => {
+    const lenh = lenhByDon.get(maDon);
+    return nhanMaSP(lenh ? (maSPGop.get(lenh.MaLenh) ?? []) : []);
+  };
 
   const excelSheets = [
     {
@@ -105,6 +122,7 @@ export default async function DungHanPage({
               <tr>
                 <th className="px-2 py-1">Đơn</th>
                 <th className="px-2 py-1">Khách</th>
+                <th className="px-2 py-1">Mã SP</th>
                 <th className="px-2 py-1">Hạn giao</th>
                 <th className="px-2 py-1">Hoàn thành</th>
                 <th className="px-2 py-1">Số ngày trễ</th>
@@ -115,6 +133,9 @@ export default async function DungHanPage({
                 <tr key={d.MaDon}>
                   <td className="px-2 py-1 font-mono">{d.MaDon}</td>
                   <td className="px-2 py-1">{d.KhachHang}</td>
+                  <td className="px-2 py-1">
+                    <MaSPHienThi nhan={nhanSPTheoDon(d.MaDon)} />
+                  </td>
                   <td className="px-2 py-1">{d.NgayGiaoHang}</td>
                   <td className="px-2 py-1">
                     {d.ngayHoanThanh ?? "(chưa xong)"}
@@ -127,7 +148,7 @@ export default async function DungHanPage({
               {kq.danhSachTre.length === 0 && (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="px-2 py-4 text-center text-gray-400"
                   >
                     Không có đơn trễ trong tháng.

@@ -1,14 +1,13 @@
-import Link from "next/link";
 import { lenhSanXuatRepository } from "@/lib/repositories/lenhSanXuat";
 import { donHangRepository } from "@/lib/repositories/donHang";
 import { lichChayRepository } from "@/lib/repositories/lichChay";
 import { tienDoRepository } from "@/lib/repositories/tienDo";
-import type { LichChay, TienDo } from "@/lib/domain/types";
+import { maSanPhamRepository } from "@/lib/repositories/maSanPham";
+import type { LichChay, MaSanPham, TienDo } from "@/lib/domain/types";
 import { treHan } from "@/lib/domain/assist";
 import { parseLocal } from "@/lib/domain/datetime";
-import { NHAN_CONG_DOAN } from "@/lib/domain/labels";
-import { BadgeLenh } from "@/components/status-badge";
-import { MaLenhHienThi } from "@/components/lenh-specs";
+import { chuoiTimKiemLenh, nhanMaSP } from "@/components/lenh-specs";
+import { TienDoDanhSach, type TienDoItemVM } from "./danh-sach";
 
 export const dynamic = "force-dynamic";
 
@@ -23,12 +22,14 @@ function moiNhatCongDoan(logs: TienDo[], congDoan: string): TienDo | undefined {
 }
 
 export default async function TienDoPage() {
-  const [lenhList, donList, lichAll, tienDoAll] = await Promise.all([
-    lenhSanXuatRepository.findAll(),
-    donHangRepository.findAll(),
-    lichChayRepository.findAll(),
-    tienDoRepository.findAll(),
-  ]);
+  const [lenhList, donList, lichAll, tienDoAll, maSanPhamAll] =
+    await Promise.all([
+      lenhSanXuatRepository.findAll(),
+      donHangRepository.findAll(),
+      lichChayRepository.findAll(),
+      tienDoRepository.findAll(),
+      maSanPhamRepository.findAll(),
+    ]);
 
   const donMap = new Map(donList.map((d) => [d.MaDon, d]));
   const lichByLenh = new Map<string, LichChay[]>();
@@ -43,8 +44,16 @@ export default async function TienDoPage() {
     arr.push(t);
     tienDoByLenh.set(t.MaLenh, arr);
   }
+  // Join MaSanPham theo MaLenh trong RAM (đọc cả tab 1 lần qua cache,
+  // không gọi API theo từng lệnh).
+  const maSPByLenh = new Map<string, MaSanPham[]>();
+  for (const m of maSanPhamAll) {
+    const arr = maSPByLenh.get(m.MaLenh) ?? [];
+    arr.push(m);
+    maSPByLenh.set(m.MaLenh, arr);
+  }
 
-  const dangChay = lenhList
+  const dangChay: TienDoItemVM[] = lenhList
     .filter((l) => l.TrangThai === "DaLenLich" || l.TrangThai === "DangChay")
     .map((l) => {
       const d = donMap.get(l.MaDon);
@@ -62,6 +71,7 @@ export default async function TienDoPage() {
       const latest = current
         ? moiNhatCongDoan(logs, current.CongDoan)
         : undefined;
+      const maSP = maSPByLenh.get(l.MaLenh) ?? [];
       return {
         MaLenh: l.MaLenh,
         MaLSXXuong: l.MaLSXXuong ?? "",
@@ -73,10 +83,17 @@ export default async function TienDoPage() {
         HanHoanThanh: l.HanHoanThanh,
         total,
         done,
-        current,
-        latest,
+        congDoanHienTai: current?.CongDoan,
+        soLuongDat: latest?.SoLuongDat,
         pct: total > 0 ? Math.round((done / total) * 100) : 0,
         tre: treHan(ketThucCuoi || null, l.HanHoanThanh),
+        MaSP: nhanMaSP(maSP),
+        TimKiem: chuoiTimKiemLenh({
+          tenSanPham: d?.TenSanPham,
+          maLenh: l.MaLenh,
+          maLSXXuong: l.MaLSXXuong,
+          maSP,
+        }),
       };
     })
     .sort((a, b) =>
@@ -86,7 +103,7 @@ export default async function TienDoPage() {
   const soTre = dangChay.filter((x) => x.tre).length;
 
   return (
-    // Tiêu đề + thẻ thống kê cố định; danh sách lệnh là vùng cuộn.
+    // Tiêu đề + thẻ thống kê + ô tìm cố định; danh sách lệnh là vùng cuộn.
     <div className="flex h-full min-h-0 flex-col gap-4">
       <div className="shrink-0">
         <h1 className="text-xl font-semibold">Tiến độ sản xuất</h1>
@@ -125,69 +142,7 @@ export default async function TienDoPage() {
         </div>
       </div>
 
-      <div className="min-h-0 space-y-2 overflow-y-auto">
-        {dangChay.map((x) => (
-          <Link
-            key={x.MaLenh}
-            href={`/tien-do/${x.MaLenh}`}
-            className={`block rounded-lg border bg-white p-3 hover:bg-gray-50 ${
-              x.tre ? "border-red-300" : "border-gray-200"
-            }`}
-          >
-            <div className="flex flex-wrap items-center gap-2">
-              <MaLenhHienThi maLenh={x.MaLenh} maLSXXuong={x.MaLSXXuong} />
-              <BadgeLenh value={x.TrangThai} />
-              {x.tre && (
-                <span className="rounded bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
-                  ⚠️ Nguy cơ trễ
-                </span>
-              )}
-            </div>
-            <p className="mt-1 text-sm font-medium text-gray-900">
-              {x.TenSanPham || "—"}{" "}
-              <span className="text-xs font-normal text-gray-400">
-                · {x.KhachHang}
-              </span>
-            </p>
-
-            <div className="mt-2 flex items-center gap-2">
-              <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-100">
-                <div
-                  className="h-full rounded-full bg-brand"
-                  style={{ width: `${x.pct}%` }}
-                />
-              </div>
-              <span className="text-xs text-gray-500">
-                {x.done}/{x.total} công đoạn
-              </span>
-            </div>
-
-            <p className="mt-1 text-xs text-gray-500">
-              {x.current ? (
-                <>
-                  Hiện tại:{" "}
-                  <strong>{NHAN_CONG_DOAN[x.current.CongDoan]}</strong>
-                  {x.latest
-                    ? ` · đạt ${x.latest.SoLuongDat.toLocaleString()}/${x.SoToIn.toLocaleString()}`
-                    : " · chưa bắt đầu"}
-                </>
-              ) : (
-                "Đã xong tất cả công đoạn"
-              )}{" "}
-              · Hạn: {x.HanHoanThanh || "—"}
-            </p>
-          </Link>
-        ))}
-        {dangChay.length === 0 && (
-          <p className="rounded-lg border border-dashed border-gray-200 py-10 text-center text-sm text-gray-400">
-            Chưa có lệnh nào đang chạy. Hãy xếp lịch ở mục{" "}
-            <Link href="/xep-lich" className="text-brand hover:underline">
-              Xếp lịch
-            </Link>
-            .
-          </p>
-        )}
-      </div>
+      <TienDoDanhSach items={dangChay} />
     </div>
   );
 }

@@ -2,21 +2,33 @@ import { mayRepository } from "@/lib/repositories/may";
 import { lenhSanXuatRepository } from "@/lib/repositories/lenhSanXuat";
 import { donHangRepository } from "@/lib/repositories/donHang";
 import { lichChayRepository } from "@/lib/repositories/lichChay";
+import { maSanPhamRepository } from "@/lib/repositories/maSanPham";
+import type { MaSanPham } from "@/lib/domain/types";
 import { formatLocal, nowLocal } from "@/lib/domain/datetime";
+import { chuoiTimKiemLenh, nhanMaSP } from "@/components/lenh-specs";
 import { Board, type ChoXepVM, type LichVM } from "./board";
 
 export const dynamic = "force-dynamic";
 
 export default async function XepLichPage() {
-  const [may, lenhList, donList, lichList] = await Promise.all([
+  const [may, lenhList, donList, lichList, maSanPhamAll] = await Promise.all([
     mayRepository.findAll(),
     lenhSanXuatRepository.findAll(),
     donHangRepository.findAll(),
     lichChayRepository.findAll(),
+    maSanPhamRepository.findAll(),
   ]);
 
   const donMap = new Map(donList.map((d) => [d.MaDon, d]));
   const lenhMap = new Map(lenhList.map((l) => [l.MaLenh, l]));
+  // Join MaSanPham theo MaLenh trong RAM (đọc cả tab 1 lần qua cache,
+  // không gọi API theo từng lệnh).
+  const maSPByLenh = new Map<string, MaSanPham[]>();
+  for (const m of maSanPhamAll) {
+    const arr = maSPByLenh.get(m.MaLenh) ?? [];
+    arr.push(m);
+    maSPByLenh.set(m.MaLenh, arr);
+  }
 
   // 2.3 — Lệnh chờ xếp: chỉ SanSang + ChoLenLich (sắp xếp cuối cùng ở client).
   const choXep: ChoXepVM[] = lenhList
@@ -25,6 +37,7 @@ export default async function XepLichPage() {
     )
     .map((l) => {
       const d = donMap.get(l.MaDon);
+      const maSP = maSPByLenh.get(l.MaLenh) ?? [];
       return {
         MaLenh: l.MaLenh,
         MaDon: l.MaDon,
@@ -42,6 +55,13 @@ export default async function XepLichPage() {
         KhoIn: l.KhoIn ?? "",
         SoTrang: l.SoTrang ?? 0,
         BuHaoPhanTram: l.BuHaoPhanTram ?? 0,
+        MaSP: nhanMaSP(maSP),
+        TimKiem: chuoiTimKiemLenh({
+          tenSanPham: d?.TenSanPham,
+          maLenh: l.MaLenh,
+          maLSXXuong: l.MaLSXXuong,
+          maSP,
+        }),
       };
     });
 
@@ -49,6 +69,7 @@ export default async function XepLichPage() {
   const lich: LichVM[] = lichList.map((l) => {
     const lenh = lenhMap.get(l.MaLenh);
     const d = lenh ? donMap.get(lenh.MaDon) : undefined;
+    const maSP = maSPByLenh.get(l.MaLenh) ?? [];
     return {
       ...l,
       TenSanPham: d?.TenSanPham ?? "",
@@ -62,6 +83,13 @@ export default async function XepLichPage() {
       KhoGiay: lenh?.KhoGiay ?? "",
       KhoIn: lenh?.KhoIn ?? "",
       SoTrang: lenh?.SoTrang ?? 0,
+      MaSP: nhanMaSP(maSP),
+      TimKiem: chuoiTimKiemLenh({
+        tenSanPham: d?.TenSanPham,
+        maLenh: l.MaLenh,
+        maLSXXuong: lenh?.MaLSXXuong,
+        maSP,
+      }),
     };
   });
 

@@ -5,11 +5,14 @@ import { lichChayRepository } from "@/lib/repositories/lichChay";
 import { tienDoRepository } from "@/lib/repositories/tienDo";
 import { phatSinhRepository } from "@/lib/repositories/phatSinh";
 import { mayRepository } from "@/lib/repositories/may";
+import { maSanPhamRepository } from "@/lib/repositories/maSanPham";
+import type { MaSanPham } from "@/lib/domain/types";
 import { baoCaoNgay } from "@/lib/domain/report";
 import { nowLocal, todayVN } from "@/lib/domain/datetime";
 import { NHAN_CONG_DOAN, NHAN_PHAT_SINH_LOAI } from "@/lib/domain/labels";
 import { DateRange } from "@/components/date-range";
 import { ExportButtons } from "@/components/export-button";
+import { MaSPHienThi, nhanMaSP } from "@/components/lenh-specs";
 import type { CongDoan } from "@/lib/domain/enums";
 
 export const dynamic = "force-dynamic";
@@ -23,7 +26,7 @@ export default async function BaoCaoNgayPage({
   const homNay = todayVN();
   const ngay = from ?? homNay;
 
-  const [lenhs, dons, lichAll, tienDoAll, phatSinhAll, mayList] =
+  const [lenhs, dons, lichAll, tienDoAll, phatSinhAll, mayList, maSanPhamAll] =
     await Promise.all([
       lenhSanXuatRepository.findAll(),
       donHangRepository.findAll(),
@@ -31,7 +34,18 @@ export default async function BaoCaoNgayPage({
       tienDoRepository.findAll(),
       phatSinhRepository.findAll(),
       mayRepository.findAll(),
+      maSanPhamRepository.findAll(),
     ]);
+
+  // Join MaSanPham theo MaLenh trong RAM (đọc cả tab 1 lần qua cache) —
+  // chỉ để hiển thị nhãn mã SP trong các danh sách lệnh.
+  const maSPGop = new Map<string, MaSanPham[]>();
+  for (const m of maSanPhamAll) {
+    const arr = maSPGop.get(m.MaLenh) ?? [];
+    arr.push(m);
+    maSPGop.set(m.MaLenh, arr);
+  }
+  const nhanSP = (maLenh: string) => nhanMaSP(maSPGop.get(maLenh) ?? []);
 
   const bc = baoCaoNgay({
     ngay,
@@ -123,6 +137,9 @@ export default async function BaoCaoNgayPage({
               >
                 <div className="font-mono text-xs">{l.MaLenh}</div>
                 <div className="font-medium">{l.TenSanPham || "—"}</div>
+                <div>
+                  <MaSPHienThi nhan={nhanSP(l.MaLenh)} />
+                </div>
                 <div className="text-xs text-gray-500">
                   {l.KhachHang} · {l.thoiDiem.slice(11, 16)}
                 </div>
@@ -149,6 +166,9 @@ export default async function BaoCaoNgayPage({
               >
                 <div className="font-mono text-xs">{l.MaLenh}</div>
                 <div className="font-medium">{l.TenSanPham || "—"}</div>
+                <div>
+                  <MaSPHienThi nhan={nhanSP(l.MaLenh)} />
+                </div>
                 <div className="text-xs text-gray-500">
                   {l.congDoanHienTai
                     ? NHAN_CONG_DOAN[l.congDoanHienTai as CongDoan]
@@ -178,6 +198,9 @@ export default async function BaoCaoNgayPage({
               >
                 <div className="font-mono text-xs">{n.MaLenh}</div>
                 <div className="font-medium">{n.TenSanPham || "—"}</div>
+                <div>
+                  <MaSPHienThi nhan={nhanSP(n.MaLenh)} />
+                </div>
                 <div className="text-xs text-gray-500">
                   {n.KhachHang} · Hạn {n.HanHoanThanh || "—"}
                   {n.ketThucDuKien &&

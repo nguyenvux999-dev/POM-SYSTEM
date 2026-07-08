@@ -14,7 +14,13 @@ import {
 } from "@/lib/domain/datetime";
 import { NHAN_CONG_DOAN, NHAN_MAY_LOAI } from "@/lib/domain/labels";
 import { BadgeLich, BadgeUuTien } from "@/components/status-badge";
-import { MaLenhHienThi, ThongSoChips } from "@/components/lenh-specs";
+import {
+  khopTimKiem,
+  MaLenhHienThi,
+  MaSPHienThi,
+  ThongSoChips,
+} from "@/components/lenh-specs";
+import { OTimKiemLenh } from "@/components/lenh-search";
 import { xepLaiLenh, xepLenh } from "./actions";
 
 // --- View models (dựng ở page.tsx, server) ---
@@ -36,6 +42,10 @@ export interface ChoXepVM {
   KhoIn: string;
   SoTrang: number;
   BuHaoPhanTram: number;
+  /** Nhãn các mã SP thuộc lệnh (hiển thị "mã đầu +N mã"). */
+  MaSP: string[];
+  /** Chuỗi tìm kiếm dựng sẵn ở server (xem chuoiTimKiemLenh). */
+  TimKiem: string;
 }
 
 export interface LichVM {
@@ -62,6 +72,10 @@ export interface LichVM {
   KhoGiay: string;
   KhoIn: string;
   SoTrang: number;
+  /** Nhãn các mã SP thuộc lệnh (hiển thị "mã đầu +N mã"). */
+  MaSP: string[];
+  /** Chuỗi tìm kiếm dựng sẵn ở server (xem chuoiTimKiemLenh). */
+  TimKiem: string;
 }
 
 const UU_TIEN_RANK: Record<DoUuTien, number> = {
@@ -112,6 +126,9 @@ export function Board({
   // Lệnh vừa bấm xếp (optimistic ẩn khỏi panel chờ ngay).
   const [danAn, setDanAn] = useState<Set<string>>(new Set());
   const [dragLenh, setDragLenh] = useState<string | null>(null);
+  // Tìm kiếm chỉ LỌC hiển thị (client, tức thì) — mọi tính toán trợ lý
+  // (gom màu, tải máy, preview) vẫn chạy trên TOÀN BỘ dữ liệu.
+  const [tuKhoa, setTuKhoa] = useState("");
   const homNay = now.slice(0, 10); // server cấp → tất định, tránh hydration mismatch
   const [ngayXem, setNgayXem] = useState<string>(homNay);
 
@@ -147,13 +164,14 @@ export function Board({
   const choXepSorted = useMemo(() => {
     return [...choXep]
       .filter((c) => !danAn.has(c.MaLenh))
+      .filter((c) => khopTimKiem(c.TimKiem, tuKhoa))
       .sort((a, b) => {
         const ha = a.HanHoanThanh || "9999-99-99";
         const hb = b.HanHoanThanh || "9999-99-99";
         if (ha !== hb) return ha < hb ? -1 : 1;
         return UU_TIEN_RANK[a.DoUuTien] - UU_TIEN_RANK[b.DoUuTien];
       });
-  }, [choXep, danAn]);
+  }, [choXep, danAn, tuKhoa]);
 
   function runXep(
     maLenh: string,
@@ -195,9 +213,11 @@ export function Board({
   const lenhDaXep = useMemo(() => groupLenh(lich), [lich]);
 
   return (
-    // Lỗi luôn hiện trên đỉnh; phần dữ liệu (panel chờ + bảng máy + lệnh đã xếp)
-    // nằm trong một vùng cuộn dọc chung.
+    // Ô tìm + lỗi luôn hiện trên đỉnh; phần dữ liệu (panel chờ + bảng máy +
+    // lệnh đã xếp) nằm trong một vùng cuộn dọc chung.
     <div className="flex h-full min-h-0 flex-col gap-3">
+      <OTimKiemLenh value={tuKhoa} onChange={setTuKhoa} />
+
       {error && (
         <div className="shrink-0 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-700">
           {error}
@@ -254,6 +274,9 @@ export function Board({
                       {c.TenSanPham || "—"}
                     </p>
                     <p className="text-xs text-gray-500">{c.KhachHang}</p>
+                    <p className="mt-0.5">
+                      <MaSPHienThi nhan={c.MaSP} />
+                    </p>
                     <div className="mt-1">
                       <ThongSoChips
                         SoMau={c.SoMau}
@@ -361,12 +384,14 @@ export function Board({
               }}
             >
               {may.map((m) => {
+                // Từ khóa tìm chỉ lọc block HIỂN THỊ; tải máy vẫn tính đủ.
                 const blocks = lich
                   .filter(
                     (l) =>
                       l.MaMay === m.MaMay &&
                       ngay(l.BatDauDuKien) <= ngayXem &&
-                      ngay(l.KetThucDuKien) >= ngayXem,
+                      ngay(l.KetThucDuKien) >= ngayXem &&
+                      khopTimKiem(l.TimKiem, tuKhoa),
                   )
                   .sort((a, b) => (a.BatDauDuKien < b.BatDauDuKien ? -1 : 1));
                 const tai = taiMay.get(m.MaMay) ?? 0;
@@ -443,6 +468,20 @@ export function Board({
                             <span className="font-mono">{b.MaLenh}</span>
                             <span className="text-gray-500">#{b.ThuTu}</span>
                           </div>
+                          {b.MaSP.length > 0 && (
+                            <div
+                              className="truncate font-mono text-gray-500"
+                              title={b.MaSP.join(", ")}
+                            >
+                              {b.MaSP[0]}
+                              {b.MaSP.length > 1 && (
+                                <span className="font-sans">
+                                  {" "}
+                                  +{b.MaSP.length - 1} mã
+                                </span>
+                              )}
+                            </div>
+                          )}
                           <div className="font-medium text-gray-800">
                             {NHAN_CONG_DOAN[b.CongDoan]}
                           </div>
@@ -475,7 +514,7 @@ export function Board({
 
         {/* Lệnh đã xếp — xếp lại / gán lại máy (2.5 fallback) */}
         <ScheduledSection
-          groups={lenhDaXep}
+          groups={lenhDaXep.filter((g) => khopTimKiem(g.TimKiem, tuKhoa))}
           may={may}
           busyLenh={busyLenh}
           onXepLai={(maLenh, ganMay, mocBatDau) =>
@@ -496,6 +535,8 @@ interface LenhGroup {
   KhachHang: string;
   HanHoanThanh: string;
   DoUuTien: DoUuTien;
+  MaSP: string[];
+  TimKiem: string;
   stages: LichVM[];
   ketThucCuoi: string;
   tre: boolean;
@@ -523,6 +564,8 @@ function groupLenh(lich: LichVM[]): LenhGroup[] {
       KhachHang: first.KhachHang,
       HanHoanThanh: first.HanHoanThanh,
       DoUuTien: first.DoUuTien,
+      MaSP: first.MaSP,
+      TimKiem: first.TimKiem,
       stages,
       ketThucCuoi,
       tre: treHan(ketThucCuoi || null, first.HanHoanThanh),
@@ -616,6 +659,7 @@ function LenhRow({
         <BadgeUuTien value={group.DoUuTien} />
         <span className="text-sm text-gray-700">{group.TenSanPham}</span>
         <span className="text-xs text-gray-400">· {group.KhachHang}</span>
+        <MaSPHienThi nhan={group.MaSP} />
         {group.tre && (
           <span className="rounded bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
             ⚠️ Trễ hạn (xong {group.ketThucCuoi} &gt; hạn {group.HanHoanThanh})

@@ -22,7 +22,7 @@ import {
   NHAN_PHAT_SINH_LOAI,
 } from "@/lib/domain/labels";
 import { BadgeMay, BadgeMucDo, BadgePhatSinh } from "@/components/status-badge";
-import { MaLenhHienThi } from "@/components/lenh-specs";
+import { MaLenhHienThi, MaSPHienThi } from "@/components/lenh-specs";
 import {
   capNhatTrangThaiMay,
   doiTrangThaiPhatSinh,
@@ -75,6 +75,7 @@ export function PhatSinhBoard({
   nguyCoTre,
   may,
   lichAll,
+  maSPTheoLenh,
   now,
 }: {
   phatSinh: PhatSinhVM[];
@@ -82,6 +83,8 @@ export function PhatSinhBoard({
   nguyCoTre: NguyCoTreItem[];
   may: May[];
   lichAll: LichChay[];
+  /** Nhãn mã SP theo MaLenh (join sẵn ở server) — chỉ để hiển thị. */
+  maSPTheoLenh: Record<string, string[]>;
   now: string;
 }) {
   const router = useRouter();
@@ -146,6 +149,9 @@ export function PhatSinhBoard({
                           {" "}
                           · {n.KhachHang}
                         </span>
+                        <div>
+                          <MaSPHienThi nhan={maSPTheoLenh[n.MaLenh] ?? []} />
+                        </div>
                       </td>
                       <td className="px-2 py-1">{n.HanHoanThanh || "—"}</td>
                       <td
@@ -187,6 +193,7 @@ export function PhatSinhBoard({
                 item={item}
                 may={may}
                 lichAll={lichAll}
+                maSP={maSPTheoLenh[item.MaLenh] ?? []}
                 now={now}
                 busy={busy === `xl-${item.MaLenh}`}
                 onXepLai={(gan, moc) =>
@@ -249,6 +256,7 @@ export function PhatSinhBoard({
         {/* 3.6a — Danh sách phát sinh */}
         <PhatSinhList
           phatSinh={phatSinh}
+          maSPTheoLenh={maSPTheoLenh}
           busy={busy}
           onDoiTrangThai={(ma, tt) =>
             run(`ps-${ma}`, () => doiTrangThaiPhatSinh(ma, tt))
@@ -265,6 +273,7 @@ function XepLaiRow({
   item,
   may,
   lichAll,
+  maSP,
   now,
   busy,
   onXepLai,
@@ -272,6 +281,8 @@ function XepLaiRow({
   item: CanXepLaiVM;
   may: May[];
   lichAll: LichChay[];
+  /** Nhãn mã SP của lệnh — chỉ để hiển thị. */
+  maSP: string[];
   now: string;
   busy: boolean;
   onXepLai: (gan: Record<string, string>, moc: string) => void;
@@ -316,6 +327,7 @@ function XepLaiRow({
         <MaLenhHienThi maLenh={item.MaLenh} maLSXXuong={item.MaLSXXuong} />
         <span className="text-sm text-gray-700">{item.TenSanPham}</span>
         <span className="text-xs text-gray-400">· {item.KhachHang}</span>
+        <MaSPHienThi nhan={maSP} />
         {item.boiMayLoi && (
           <span className="rounded bg-red-100 px-2 py-0.5 text-xs text-red-700">
             máy: {item.congDoanBiKet.map((c) => c.tenMay).join(", ")}
@@ -420,10 +432,13 @@ function XepLaiRow({
 
 function PhatSinhList({
   phatSinh,
+  maSPTheoLenh,
   busy,
   onDoiTrangThai,
 }: {
   phatSinh: PhatSinhVM[];
+  /** Nhãn mã SP theo MaLenh — chỉ để hiển thị. */
+  maSPTheoLenh: Record<string, string[]>;
   busy: string | null;
   onDoiTrangThai: (ma: string, tt: PhatSinhTrangThai) => void;
 }) {
@@ -503,7 +518,8 @@ function PhatSinhList({
                   size="xs"
                 />
               </Link>{" "}
-              · {p.TenSanPham} ({p.KhachHang})
+              · {p.TenSanPham} ({p.KhachHang}) ·{" "}
+              <MaSPHienThi nhan={maSPTheoLenh[p.MaLenh] ?? []} />
               {p.HuongXuLy && ` · Xử lý: ${p.HuongXuLy}`}
             </p>
 

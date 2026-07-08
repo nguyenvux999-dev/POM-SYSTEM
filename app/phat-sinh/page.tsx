@@ -4,23 +4,38 @@ import { donHangRepository } from "@/lib/repositories/donHang";
 import { lichChayRepository } from "@/lib/repositories/lichChay";
 import { mayRepository } from "@/lib/repositories/may";
 import { phatSinhRepository } from "@/lib/repositories/phatSinh";
+import { maSanPhamRepository } from "@/lib/repositories/maSanPham";
+import type { MaSanPham } from "@/lib/domain/types";
 import { danhSachCanXepLai, danhSachNguyCoTre } from "@/lib/domain/reschedule";
 import { formatLocal, nowLocal, todayVN } from "@/lib/domain/datetime";
+import { nhanMaSP } from "@/components/lenh-specs";
 import { PhatSinhBoard, type CanXepLaiVM, type PhatSinhVM } from "./board";
 
 export const dynamic = "force-dynamic";
 
 export default async function PhatSinhPage() {
-  const [lenhList, donList, lichAll, mayList, phatSinhAll] = await Promise.all([
-    lenhSanXuatRepository.findAll(),
-    donHangRepository.findAll(),
-    lichChayRepository.findAll(),
-    mayRepository.findAll(),
-    phatSinhRepository.findAll(),
-  ]);
+  const [lenhList, donList, lichAll, mayList, phatSinhAll, maSanPhamAll] =
+    await Promise.all([
+      lenhSanXuatRepository.findAll(),
+      donHangRepository.findAll(),
+      lichChayRepository.findAll(),
+      mayRepository.findAll(),
+      phatSinhRepository.findAll(),
+      maSanPhamRepository.findAll(),
+    ]);
 
   const donMap = new Map(donList.map((d) => [d.MaDon, d]));
   const lenhMap = new Map(lenhList.map((l) => [l.MaLenh, l]));
+  // Join MaSanPham theo MaLenh trong RAM (đọc cả tab 1 lần qua cache) rồi đưa
+  // xuống board dạng map nhãn MaLenh -> ["mã", ...] — chỉ để HIỂN THỊ.
+  const maSPGop = new Map<string, MaSanPham[]>();
+  for (const m of maSanPhamAll) {
+    const arr = maSPGop.get(m.MaLenh) ?? [];
+    arr.push(m);
+    maSPGop.set(m.MaLenh, arr);
+  }
+  const maSPTheoLenh: Record<string, string[]> = {};
+  for (const [maLenh, ds] of maSPGop) maSPTheoLenh[maLenh] = nhanMaSP(ds);
 
   const phatSinh: PhatSinhVM[] = phatSinhAll
     .slice()
@@ -106,6 +121,7 @@ export default async function PhatSinhPage() {
           nguyCoTre={nguyCoTre}
           may={mayList}
           lichAll={lichAll}
+          maSPTheoLenh={maSPTheoLenh}
           now={formatLocal(nowLocal())}
         />
       </div>

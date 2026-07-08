@@ -6,7 +6,63 @@
  *    nội bộ nhỏ màu xám bên cạnh; không có mã xưởng → chỉ hiện MaLenh.
  *  - `ThongSoChips`: dải "chip" thông số kỹ thuật gọn gàng (số màu, khổ giấy, khổ
  *    in, loại giấy, số trang) — bỏ qua trường trống. SoMau/LoaiGiay lấy từ DonHang.
+ *  - `MaSPHienThi` + `nhanMaSP`: mã sản phẩm của lệnh dạng "mã đầu +N mã".
+ *  - `chuoiTimKiemLenh` + `khopTimKiem`: chuỗi tìm kiếm dựng sẵn ở server và
+ *    phép khớp client-side (lọc hiển thị, không phát sinh request).
  */
+
+import type { MaSanPham } from "@/lib/domain/types";
+
+/** Nhãn hiển thị các mã SP của một lệnh: ưu tiên MaSanPham, fallback TenSanPham. */
+export function nhanMaSP(ds: MaSanPham[]): string[] {
+  return ds
+    .map((m) => m.MaSanPham || m.TenSanPham)
+    .filter((s) => s.trim() !== "");
+}
+
+/** Mã sản phẩm của lệnh: 0 mã → "—"; nhiều mã → mã đầu + "+N mã", hover xem đủ. */
+export function MaSPHienThi({ nhan }: { nhan: string[] }) {
+  if (nhan.length === 0) {
+    return <span className="text-xs text-gray-400">—</span>;
+  }
+  return (
+    <span className="font-mono text-xs" title={nhan.join(", ")}>
+      {nhan[0]}
+      {nhan.length > 1 && (
+        <span className="ml-1 font-sans text-gray-400">
+          +{nhan.length - 1} mã
+        </span>
+      )}
+    </span>
+  );
+}
+
+/**
+ * Chuỗi tìm kiếm của một lệnh (dựng MỘT LẦN ở server, lưu vào view model):
+ * gồm tên sản phẩm của đơn, mã + tên của mọi mã SP thuộc lệnh, mã LSX xưởng
+ * và mã lệnh hệ thống — tất cả về chữ thường.
+ */
+export function chuoiTimKiemLenh(x: {
+  tenSanPham?: string;
+  maLenh: string;
+  maLSXXuong?: string;
+  maSP: MaSanPham[];
+}): string {
+  return [
+    x.tenSanPham ?? "",
+    x.maLenh,
+    x.maLSXXuong ?? "",
+    ...x.maSP.flatMap((m) => [m.MaSanPham, m.TenSanPham]),
+  ]
+    .join(" ")
+    .toLowerCase();
+}
+
+/** Khớp từ khóa với chuỗi tìm kiếm: bỏ khoảng trắng thừa, không phân biệt hoa/thường. */
+export function khopTimKiem(timKiem: string, tuKhoa: string): boolean {
+  const q = tuKhoa.trim().replace(/\s+/g, " ").toLowerCase();
+  return q === "" || timKiem.includes(q);
+}
 
 /** Mã lệnh: ưu tiên mã xưởng (đậm) + MaLenh nội bộ (xám nhỏ). */
 export function MaLenhHienThi({
