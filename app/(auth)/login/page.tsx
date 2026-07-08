@@ -1,15 +1,40 @@
-import { signIn } from "@/lib/auth/config";
+import { redirect } from "next/navigation";
+import { auth, signIn } from "@/lib/auth/config";
 
 /**
  * Trang đăng nhập. Nút "Đăng nhập với Google" gọi server action signIn.
  * Nếu email không nằm trong allowlist, Auth.js sẽ chuyển về đây kèm ?error.
+ *
+ * Trang này chỉ dành cho người CHƯA đăng nhập: đã có session mà vào /login
+ * (bookmark, nút back, PWA khôi phục tab...) -> redirect về trang đích ngay.
+ * Đăng nhập xong quay lại đúng trang người dùng định mở (?callbackUrl do
+ * middleware gắn khi đá về login); chỉ chấp nhận đường dẫn nội bộ.
  */
+
+/** Chỉ nhận đường dẫn nội bộ ("/..."), chặn open-redirect ("//..." hay URL ngoài). */
+function sanitizeCallbackUrl(raw: string | undefined): string {
+  if (!raw) return "/";
+  try {
+    // callbackUrl có thể là URL tuyệt đối cùng origin (middleware gắn dạng này).
+    const url = new URL(raw, "http://placeholder.local");
+    if (raw.startsWith("/") && !raw.startsWith("//")) return raw;
+    return url.pathname + url.search || "/";
+  } catch {
+    return "/";
+  }
+}
+
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; callbackUrl?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, callbackUrl } = await searchParams;
+  const redirectTo = sanitizeCallbackUrl(callbackUrl);
+
+  // Đã đăng nhập -> không có việc gì ở trang login, về thẳng trang đích.
+  const session = await auth();
+  if (session?.user) redirect(redirectTo);
 
   return (
     <div className="mx-auto flex min-h-[70vh] max-w-sm flex-col items-center justify-center text-center">
@@ -31,7 +56,7 @@ export default async function LoginPage({
         <form
           action={async () => {
             "use server";
-            await signIn("google", { redirectTo: "/" });
+            await signIn("google", { redirectTo });
           }}
           className="mt-6"
         >
