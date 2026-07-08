@@ -38,9 +38,16 @@ export default async function RootLayout({
 
   return (
     <html lang="vi">
-      <body className="min-h-full">
+      {/* Khung 100dvh: nav cố định trên đỉnh, main chiếm phần còn lại; cả trang
+          KHÔNG cuộn — chỉ vùng dữ liệu bên trong từng trang cuộn (min-h-0 để
+          overflow-y-auto của con hoạt động trong flexbox). */}
+      <body className="app-shell flex flex-col overflow-hidden">
         {userName && <NavBar userName={userName} />}
-        <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
+        <main className="min-h-0 flex-1 overflow-hidden">
+          <div className="mx-auto h-full min-h-0 w-full max-w-5xl px-4 py-4">
+            {children}
+          </div>
+        </main>
         {/* Đăng ký service worker + nút cài PWA (client, không chặn render) */}
         <PwaSetup />
       </body>

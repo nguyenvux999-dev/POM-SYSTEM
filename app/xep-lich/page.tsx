@@ -20,7 +20,9 @@ export default async function XepLichPage() {
 
   // 2.3 — Lệnh chờ xếp: chỉ SanSang + ChoLenLich (sắp xếp cuối cùng ở client).
   const choXep: ChoXepVM[] = lenhList
-    .filter((l) => l.TrangThaiFile === "SanSang" && l.TrangThai === "ChoLenLich")
+    .filter(
+      (l) => l.TrangThaiFile === "SanSang" && l.TrangThai === "ChoLenLich",
+    )
     .map((l) => {
       const d = donMap.get(l.MaDon);
       return {
@@ -64,8 +66,9 @@ export default async function XepLichPage() {
   });
 
   return (
-    <div className="space-y-4">
-      <div>
+    // Tiêu đề cố định; Board chiếm phần còn lại và tự quản lý vùng cuộn dữ liệu.
+    <div className="flex h-full min-h-0 flex-col gap-4">
+      <div className="shrink-0">
         <h1 className="text-xl font-semibold">Xếp lịch</h1>
         <p className="text-sm text-gray-500">
           Gán lệnh <strong>đã Sẵn sàng</strong> lên máy — hệ thống tự tính giờ
@@ -73,12 +76,14 @@ export default async function XepLichPage() {
           người quyết định.
         </p>
       </div>
-      <Board
-        may={may}
-        lich={lich}
-        choXep={choXep}
-        now={formatLocal(nowLocal())}
-      />
+      <div className="min-h-0 flex-1">
+        <Board
+          may={may}
+          lich={lich}
+          choXep={choXep}
+          now={formatLocal(nowLocal())}
+        />
+      </div>
     </div>
   );
 }

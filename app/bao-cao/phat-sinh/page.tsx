@@ -41,8 +41,9 @@ export default async function ThongKePhatSinhPage({
   const maxLoai = tk.theoLoai.reduce((m, x) => Math.max(m, x.soLuong), 0);
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    // Tiêu đề + chọn khoảng + thẻ thống kê cố định; hai bảng thống kê cuộn.
+    <div className="flex h-full min-h-0 flex-col gap-4">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
         <div>
           <Link href="/bao-cao" className="text-sm text-brand hover:underline">
             ← Báo cáo
@@ -58,9 +59,11 @@ export default async function ThongKePhatSinhPage({
         />
       </div>
 
-      <DateRange from={tuFrom} to={toTo} homNay={homNay} mode="range" />
+      <div className="shrink-0">
+        <DateRange from={tuFrom} to={toTo} homNay={homNay} mode="range" />
+      </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className="grid shrink-0 grid-cols-2 gap-3 sm:grid-cols-3">
         <div className="rounded-lg border border-gray-200 bg-white p-3">
           <div className="text-2xl font-semibold">{tk.tong}</div>
           <div className="text-xs text-gray-500">Tổng phát sinh</div>
@@ -77,7 +80,7 @@ export default async function ThongKePhatSinhPage({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid min-h-0 grid-cols-1 gap-4 overflow-y-auto sm:grid-cols-2">
         <section className="rounded-lg border border-gray-200 bg-white p-4">
           <h2 className="mb-3 text-sm font-semibold text-gray-700">
             Loại sự cố hay gặp
@@ -92,7 +95,9 @@ export default async function ThongKePhatSinhPage({
                 <div className="h-2.5 overflow-hidden rounded-full bg-gray-100">
                   <div
                     className="h-full rounded-full bg-brand"
-                    style={{ width: `${maxLoai > 0 ? (x.soLuong / maxLoai) * 100 : 0}%` }}
+                    style={{
+                      width: `${maxLoai > 0 ? (x.soLuong / maxLoai) * 100 : 0}%`,
+                    }}
                   />
                 </div>
               </div>
@@ -120,7 +125,9 @@ export default async function ThongKePhatSinhPage({
               </div>
             ))}
             {tk.theoMucDo.length === 0 && (
-              <p className="py-4 text-center text-xs text-gray-400">(không có)</p>
+              <p className="py-4 text-center text-xs text-gray-400">
+                (không có)
+              </p>
             )}
           </div>
         </section>

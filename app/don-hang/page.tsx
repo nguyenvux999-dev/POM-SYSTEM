@@ -2,10 +2,7 @@ import Link from "next/link";
 import { donHangRepository } from "@/lib/repositories/donHang";
 import { lenhSanXuatRepository } from "@/lib/repositories/lenhSanXuat";
 import { maSanPhamRepository } from "@/lib/repositories/maSanPham";
-import {
-  DON_HANG_TRANG_THAI,
-  type DonHangTrangThai,
-} from "@/lib/domain/enums";
+import { DON_HANG_TRANG_THAI, type DonHangTrangThai } from "@/lib/domain/enums";
 import type { LenhSanXuat, MaSanPham } from "@/lib/domain/types";
 import { NHAN_DON_HANG_TRANG_THAI } from "@/lib/domain/labels";
 import { BadgeDonHang, BadgeLenh } from "@/components/status-badge";
@@ -82,8 +79,9 @@ export default async function DonHangListPage({
     : donRows;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
+    // Khung trang: tiêu đề + bộ lọc cố định, chỉ vùng bảng cuộn (min-h-0 bắt buộc).
+    <div className="flex h-full min-h-0 flex-col gap-4">
+      <div className="flex shrink-0 items-center justify-between">
         <h1 className="text-xl font-semibold">Đơn hàng</h1>
         <Link
           href="/don-hang/new"
@@ -96,7 +94,7 @@ export default async function DonHangListPage({
       {/* Filter (GET) */}
       <form
         method="get"
-        className="flex flex-col gap-2 rounded-lg border border-gray-200 bg-white p-3 sm:flex-row sm:items-end"
+        className="flex shrink-0 flex-col gap-2 rounded-lg border border-gray-200 bg-white p-3 sm:flex-row sm:items-end"
       >
         <div className="flex-1">
           <label className="block text-xs text-gray-500">Trạng thái</label>
@@ -147,9 +145,9 @@ export default async function DonHangListPage({
         </div>
       </form>
 
-      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+      <div className="min-h-0 overflow-auto rounded-lg border border-gray-200 bg-white">
         <table className="w-full text-left text-sm">
-          <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+          <thead className="sticky top-0 z-10 bg-gray-50 text-xs uppercase text-gray-500">
             <tr>
               <th className="px-3 py-2">Mã đơn</th>
               <th className="px-3 py-2">Ngày nhận</th>
@@ -213,7 +211,10 @@ export default async function DonHangListPage({
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={10} className="px-3 py-6 text-center text-gray-400">
+                <td
+                  colSpan={10}
+                  className="px-3 py-6 text-center text-gray-400"
+                >
                   Không có đơn hàng nào khớp bộ lọc.
                 </td>
               </tr>

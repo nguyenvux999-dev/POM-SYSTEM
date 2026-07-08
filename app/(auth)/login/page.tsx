@@ -37,7 +37,7 @@ export default async function LoginPage({
   if (session?.user) redirect(redirectTo);
 
   return (
-    <div className="mx-auto flex min-h-[70vh] max-w-sm flex-col items-center justify-center text-center">
+    <div className="mx-auto flex h-full max-w-sm flex-col items-center justify-center overflow-y-auto text-center">
       <div className="w-full rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
         <div className="text-4xl">🏭</div>
         <h1 className="mt-3 text-lg font-semibold">Quản lý Lệnh Sản xuất</h1>

@@ -89,7 +89,7 @@ export default async function OrderDetailPage({
   const coLenh = lenhVMs.length > 0;
 
   return (
-    <div className="space-y-5">
+    <div className="h-full space-y-5 overflow-y-auto">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold">{don.MaDon}</h1>

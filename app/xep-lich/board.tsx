@@ -5,16 +5,8 @@ import { useRouter } from "next/navigation";
 import type { CongDoan, DoUuTien, LichTrangThai } from "@/lib/domain/enums";
 import type { May } from "@/lib/domain/types";
 import { CONGDOAN_MAY } from "@/lib/domain/config";
-import {
-  parseCongDoan,
-  tinhLichChoLenh,
-} from "@/lib/domain/schedule";
-import {
-  khoaDangGom,
-  khoaGom,
-  tinhTaiMay,
-  treHan,
-} from "@/lib/domain/assist";
+import { parseCongDoan, tinhLichChoLenh } from "@/lib/domain/schedule";
+import { khoaDangGom, khoaGom, tinhTaiMay, treHan } from "@/lib/domain/assist";
 import {
   addDaysLocal,
   formatDateLocal,
@@ -163,7 +155,10 @@ export function Board({
       });
   }, [choXep, danAn]);
 
-  function runXep(maLenh: string, fn: () => Promise<{ ok: boolean; error?: string }>) {
+  function runXep(
+    maLenh: string,
+    fn: () => Promise<{ ok: boolean; error?: string }>,
+  ) {
     setError(null);
     setBusyLenh((s) => new Set(s).add(maLenh));
     setDanAn((s) => new Set(s).add(maLenh));
@@ -200,165 +195,172 @@ export function Board({
   const lenhDaXep = useMemo(() => groupLenh(lich), [lich]);
 
   return (
-    <div className="space-y-4">
+    // Lỗi luôn hiện trên đỉnh; phần dữ liệu (panel chờ + bảng máy + lệnh đã xếp)
+    // nằm trong một vùng cuộn dọc chung.
+    <div className="flex h-full min-h-0 flex-col gap-3">
       {error && (
-        <div className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-700">
+        <div className="shrink-0 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-700">
           {error}
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[20rem_1fr]">
-        {/* Panel lệnh chờ xếp (2.3) */}
-        <section className="rounded-lg border border-gray-200 bg-white p-3">
-          <h2 className="mb-1 text-sm font-semibold text-gray-700">
-            Lệnh chờ xếp ({choXepSorted.length})
-          </h2>
-          <p className="mb-3 text-xs text-gray-400">
-            Chỉ lệnh đã <strong>Sẵn sàng</strong>, sắp theo hạn rồi ưu tiên. Bấm
-            “Xếp lịch” (tự chọn máy nhanh nhất) hoặc kéo thả vào cột máy.
-          </p>
-          <div className="space-y-2">
-            {choXepSorted.map((c) => {
-              const preview = tinhLichChoLenh({
-                congDoanCanLam: parseCongDoan(c.CongDoanCanLam),
-                soLuong: c.SoToIn,
-                may,
-                lichHienCo: lich,
-                buHaoPhanTram: c.BuHaoPhanTram,
-                now: nowDate,
-              });
-              const ketThuc = preview.reduce(
-                (m, k) => (k.KetThucDuKien > m ? k.KetThucDuKien : m),
-                "",
-              );
-              const tre = treHan(ketThuc || null, c.HanHoanThanh);
-              const key = khoaGom(c);
-              const border = gomColor(key, gomKeys);
-              return (
-                <div
-                  key={c.MaLenh}
-                  draggable
-                  onDragStart={() => setDragLenh(c.MaLenh)}
-                  onDragEnd={() => setDragLenh(null)}
-                  className={`cursor-grab rounded-md border border-gray-200 bg-white p-2.5 shadow-sm active:cursor-grabbing ${
-                    border ? `border-l-4 ${border}` : ""
-                  } ${tre ? "ring-1 ring-red-300" : ""}`}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <MaLenhHienThi
-                      maLenh={c.MaLenh}
-                      maLSXXuong={c.MaLSXXuong}
-                      size="xs"
-                    />
-                    <BadgeUuTien value={c.DoUuTien} />
-                  </div>
-                  <p className="mt-1 text-sm font-medium text-gray-900">
-                    {c.TenSanPham || "—"}
-                  </p>
-                  <p className="text-xs text-gray-500">{c.KhachHang}</p>
-                  <div className="mt-1">
-                    <ThongSoChips
-                      SoMau={c.SoMau}
-                      LoaiGiay={c.LoaiGiay}
-                      KhoGiay={c.KhoGiay}
-                      KhoIn={c.KhoIn}
-                      SoTrang={c.SoTrang}
-                    />
-                  </div>
-                  <div className="mt-1 flex flex-wrap gap-1">
-                    {parseCongDoan(c.CongDoanCanLam).map((cd, i) => (
-                      <span
-                        key={`${cd}-${i}`}
-                        className="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-600"
-                      >
-                        {i + 1}.{NHAN_CONG_DOAN[cd] ?? cd}
-                      </span>
-                    ))}
-                  </div>
-                  <p className="mt-1 text-xs text-gray-500">
-                    Hạn: {c.HanHoanThanh || "—"}
-                  </p>
-                  {tre ? (
-                    <p className="mt-0.5 text-xs font-medium text-red-600">
-                      ⚠️ Xếp bây giờ dự kiến TRỄ (xong ~{ngay(ketThuc)})
-                    </p>
-                  ) : (
-                    ketThuc && (
-                      <p className="mt-0.5 text-xs text-green-700">
-                        Dự kiến xong ~{ngay(ketThuc)}
-                      </p>
-                    )
-                  )}
-                  <button
-                    type="button"
-                    disabled={busyLenh.has(c.MaLenh)}
-                    onClick={() => runXep(c.MaLenh, () => xepLenh(c.MaLenh))}
-                    className="mt-2 w-full rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-dark disabled:opacity-60"
-                  >
-                    {busyLenh.has(c.MaLenh) ? "Đang xếp…" : "Xếp lịch"}
-                  </button>
-                </div>
-              );
-            })}
-            {choXepSorted.length === 0 && (
-              <p className="py-6 text-center text-xs text-gray-400">
-                Không có lệnh chờ xếp. (Lệnh phải ở trạng thái “Sẵn sàng” tại
-                Chế bản.)
-              </p>
-            )}
-          </div>
-        </section>
-
-        {/* Planning Board (2.4) */}
-        <section className="rounded-lg border border-gray-200 bg-white p-3">
-          <div className="mb-3 flex items-center justify-between gap-2">
-            <h2 className="text-sm font-semibold text-gray-700">
-              Bảng xếp lịch theo máy
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[20rem_1fr]">
+          {/* Panel lệnh chờ xếp (2.3) */}
+          <section className="rounded-lg border border-gray-200 bg-white p-3">
+            <h2 className="mb-1 text-sm font-semibold text-gray-700">
+              Lệnh chờ xếp ({choXepSorted.length})
             </h2>
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() =>
-                  setNgayXem(formatDateLocal(addDaysLocal(parseLocal(ngayXem), -1)))
-                }
-                className="rounded border border-gray-300 px-2 py-1 text-sm hover:bg-gray-100"
-                aria-label="Ngày trước"
-              >
-                ◀
-              </button>
-              <input
-                type="date"
-                value={ngayXem}
-                onChange={(e) => setNgayXem(e.target.value)}
-                className="rounded border border-gray-300 px-2 py-1 text-sm"
-              />
-              <button
-                type="button"
-                onClick={() =>
-                  setNgayXem(formatDateLocal(addDaysLocal(parseLocal(ngayXem), 1)))
-                }
-                className="rounded border border-gray-300 px-2 py-1 text-sm hover:bg-gray-100"
-                aria-label="Ngày sau"
-              >
-                ▶
-              </button>
-              <button
-                type="button"
-                onClick={() => setNgayXem(homNay)}
-                className="ml-1 rounded border border-gray-300 px-2 py-1 text-xs hover:bg-gray-100"
-              >
-                Hôm nay
-              </button>
+            <p className="mb-3 text-xs text-gray-400">
+              Chỉ lệnh đã <strong>Sẵn sàng</strong>, sắp theo hạn rồi ưu tiên.
+              Bấm “Xếp lịch” (tự chọn máy nhanh nhất) hoặc kéo thả vào cột máy.
+            </p>
+            <div className="space-y-2">
+              {choXepSorted.map((c) => {
+                const preview = tinhLichChoLenh({
+                  congDoanCanLam: parseCongDoan(c.CongDoanCanLam),
+                  soLuong: c.SoToIn,
+                  may,
+                  lichHienCo: lich,
+                  buHaoPhanTram: c.BuHaoPhanTram,
+                  now: nowDate,
+                });
+                const ketThuc = preview.reduce(
+                  (m, k) => (k.KetThucDuKien > m ? k.KetThucDuKien : m),
+                  "",
+                );
+                const tre = treHan(ketThuc || null, c.HanHoanThanh);
+                const key = khoaGom(c);
+                const border = gomColor(key, gomKeys);
+                return (
+                  <div
+                    key={c.MaLenh}
+                    draggable
+                    onDragStart={() => setDragLenh(c.MaLenh)}
+                    onDragEnd={() => setDragLenh(null)}
+                    className={`cursor-grab rounded-md border border-gray-200 bg-white p-2.5 shadow-sm active:cursor-grabbing ${
+                      border ? `border-l-4 ${border}` : ""
+                    } ${tre ? "ring-1 ring-red-300" : ""}`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <MaLenhHienThi
+                        maLenh={c.MaLenh}
+                        maLSXXuong={c.MaLSXXuong}
+                        size="xs"
+                      />
+                      <BadgeUuTien value={c.DoUuTien} />
+                    </div>
+                    <p className="mt-1 text-sm font-medium text-gray-900">
+                      {c.TenSanPham || "—"}
+                    </p>
+                    <p className="text-xs text-gray-500">{c.KhachHang}</p>
+                    <div className="mt-1">
+                      <ThongSoChips
+                        SoMau={c.SoMau}
+                        LoaiGiay={c.LoaiGiay}
+                        KhoGiay={c.KhoGiay}
+                        KhoIn={c.KhoIn}
+                        SoTrang={c.SoTrang}
+                      />
+                    </div>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {parseCongDoan(c.CongDoanCanLam).map((cd, i) => (
+                        <span
+                          key={`${cd}-${i}`}
+                          className="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-600"
+                        >
+                          {i + 1}.{NHAN_CONG_DOAN[cd] ?? cd}
+                        </span>
+                      ))}
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500">
+                      Hạn: {c.HanHoanThanh || "—"}
+                    </p>
+                    {tre ? (
+                      <p className="mt-0.5 text-xs font-medium text-red-600">
+                        ⚠️ Xếp bây giờ dự kiến TRỄ (xong ~{ngay(ketThuc)})
+                      </p>
+                    ) : (
+                      ketThuc && (
+                        <p className="mt-0.5 text-xs text-green-700">
+                          Dự kiến xong ~{ngay(ketThuc)}
+                        </p>
+                      )
+                    )}
+                    <button
+                      type="button"
+                      disabled={busyLenh.has(c.MaLenh)}
+                      onClick={() => runXep(c.MaLenh, () => xepLenh(c.MaLenh))}
+                      className="mt-2 w-full rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-dark disabled:opacity-60"
+                    >
+                      {busyLenh.has(c.MaLenh) ? "Đang xếp…" : "Xếp lịch"}
+                    </button>
+                  </div>
+                );
+              })}
+              {choXepSorted.length === 0 && (
+                <p className="py-6 text-center text-xs text-gray-400">
+                  Không có lệnh chờ xếp. (Lệnh phải ở trạng thái “Sẵn sàng” tại
+                  Chế bản.)
+                </p>
+              )}
             </div>
-          </div>
+          </section>
 
-          <div
-            className="grid gap-2"
-            style={{
-              gridTemplateColumns: "repeat(auto-fill, minmax(12rem, 1fr))",
-            }}
-          >
-            {may.map((m) => {
+          {/* Planning Board (2.4) */}
+          <section className="rounded-lg border border-gray-200 bg-white p-3">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold text-gray-700">
+                Bảng xếp lịch theo máy
+              </h2>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setNgayXem(
+                      formatDateLocal(addDaysLocal(parseLocal(ngayXem), -1)),
+                    )
+                  }
+                  className="rounded border border-gray-300 px-2 py-1 text-sm hover:bg-gray-100"
+                  aria-label="Ngày trước"
+                >
+                  ◀
+                </button>
+                <input
+                  type="date"
+                  value={ngayXem}
+                  onChange={(e) => setNgayXem(e.target.value)}
+                  className="rounded border border-gray-300 px-2 py-1 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    setNgayXem(
+                      formatDateLocal(addDaysLocal(parseLocal(ngayXem), 1)),
+                    )
+                  }
+                  className="rounded border border-gray-300 px-2 py-1 text-sm hover:bg-gray-100"
+                  aria-label="Ngày sau"
+                >
+                  ▶
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setNgayXem(homNay)}
+                  className="ml-1 rounded border border-gray-300 px-2 py-1 text-xs hover:bg-gray-100"
+                >
+                  Hôm nay
+                </button>
+              </div>
+            </div>
+
+            <div
+              className="grid gap-2"
+              style={{
+                gridTemplateColumns: "repeat(auto-fill, minmax(12rem, 1fr))",
+              }}
+            >
+              {may.map((m) => {
                 const blocks = lich
                   .filter(
                     (l) =>
@@ -381,7 +383,9 @@ export function Board({
                       setDragLenh(null);
                     }}
                     className={`flex min-h-[8rem] flex-col rounded-md border ${
-                      dragLenh ? "border-brand/50 bg-blue-50/40" : "border-gray-200 bg-gray-50"
+                      dragLenh
+                        ? "border-brand/50 bg-blue-50/40"
+                        : "border-gray-200 bg-gray-50"
                     }`}
                   >
                     <div className="border-b border-gray-200 px-2 py-1.5">
@@ -437,9 +441,7 @@ export function Board({
                         >
                           <div className="flex items-center justify-between">
                             <span className="font-mono">{b.MaLenh}</span>
-                            <span className="text-gray-500">
-                              #{b.ThuTu}
-                            </span>
+                            <span className="text-gray-500">#{b.ThuTu}</span>
                           </div>
                           <div className="font-medium text-gray-800">
                             {NHAN_CONG_DOAN[b.CongDoan]}
@@ -462,24 +464,25 @@ export function Board({
                 );
               })}
             </div>
-          {gomKeys.length > 0 && (
-            <p className="mt-2 text-[11px] text-gray-400">
-              Viền màu bên trái = các lệnh cùng số màu/khổ/giấy — nên xếp liền
-              nhau để giảm make-ready.
-            </p>
-          )}
-        </section>
-      </div>
+            {gomKeys.length > 0 && (
+              <p className="mt-2 text-[11px] text-gray-400">
+                Viền màu bên trái = các lệnh cùng số màu/khổ/giấy — nên xếp liền
+                nhau để giảm make-ready.
+              </p>
+            )}
+          </section>
+        </div>
 
-      {/* Lệnh đã xếp — xếp lại / gán lại máy (2.5 fallback) */}
-      <ScheduledSection
-        groups={lenhDaXep}
-        may={may}
-        busyLenh={busyLenh}
-        onXepLai={(maLenh, ganMay, mocBatDau) =>
-          runXep(maLenh, () => xepLaiLenh(maLenh, ganMay, mocBatDau))
-        }
-      />
+        {/* Lệnh đã xếp — xếp lại / gán lại máy (2.5 fallback) */}
+        <ScheduledSection
+          groups={lenhDaXep}
+          may={may}
+          busyLenh={busyLenh}
+          onXepLai={(maLenh, ganMay, mocBatDau) =>
+            runXep(maLenh, () => xepLaiLenh(maLenh, ganMay, mocBatDau))
+          }
+        />
+      </div>
     </div>
   );
 }
@@ -623,9 +626,7 @@ function LenhRow({
       <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
         {group.stages.map((s) => {
           const loai = CONGDOAN_MAY[s.CongDoan];
-          const options = loai
-            ? may.filter((m) => m.Loai === loai)
-            : [];
+          const options = loai ? may.filter((m) => m.Loai === loai) : [];
           return (
             <div
               key={s.MaLich}
@@ -636,7 +637,8 @@ function LenhRow({
                   {NHAN_CONG_DOAN[s.CongDoan]}
                 </div>
                 <div className="text-gray-400">
-                  {gio(s.BatDauDuKien)}–{gio(s.KetThucDuKien)} · {ngay(s.BatDauDuKien)}
+                  {gio(s.BatDauDuKien)}–{gio(s.KetThucDuKien)} ·{" "}
+                  {ngay(s.BatDauDuKien)}
                 </div>
               </div>
               {options.length > 0 ? (

@@ -56,10 +56,7 @@ function AnhSanPham({ sp }: { sp: ThuVienSanPham }) {
   );
 }
 
-type ModalState =
-  | { mode: "them" }
-  | { mode: "sua"; sp: ThuVienSanPham }
-  | null;
+type ModalState = { mode: "them" } | { mode: "sua"; sp: ThuVienSanPham } | null;
 
 export function ThuVienClient({ dsBanDau }: { dsBanDau: ThuVienSanPham[] }) {
   const router = useRouter();
@@ -88,8 +85,9 @@ export function ThuVienClient({ dsBanDau }: { dsBanDau: ThuVienSanPham[] }) {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-2">
+    // Tiêu đề + tìm kiếm cố định; lưới thẻ là vùng cuộn (min-h-0 bắt buộc).
+    <div className="flex h-full min-h-0 flex-col gap-4">
+      <div className="flex shrink-0 items-center justify-between gap-2">
         <h1 className="text-xl font-semibold">Thư viện sản phẩm</h1>
         <button
           onClick={() => setModal({ mode: "them" })}
@@ -104,43 +102,47 @@ export function ThuVienClient({ dsBanDau }: { dsBanDau: ThuVienSanPham[] }) {
         value={tuKhoa}
         onChange={(e) => setTuKhoa(e.target.value)}
         placeholder="Tìm theo mã hoặc tên sản phẩm…"
-        className={inputCls}
+        className={`${inputCls} shrink-0`}
       />
 
-      <p className="text-xs text-gray-500">
+      <p className="shrink-0 text-xs text-gray-500">
         {dsLoc.length}/{ds.length} sản phẩm
       </p>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-        {dsLoc.map((sp) => (
-          <button
-            key={sp.MaSanPham}
-            onClick={() => setModal({ mode: "sua", sp })}
-            className="overflow-hidden rounded-lg border border-gray-200 bg-white text-left shadow-sm transition hover:border-brand hover:shadow"
-          >
-            <AnhSanPham sp={sp} />
-            <div className="space-y-0.5 p-2.5">
-              <p className="font-mono text-sm font-bold text-gray-900">
-                {sp.MaSanPham}
-              </p>
-              <p className="line-clamp-2 text-sm text-gray-700">
-                {sp.TenSanPham}
-              </p>
-              {sp.KhachHang && (
-                <p className="truncate text-xs text-gray-500">{sp.KhachHang}</p>
-              )}
-            </div>
-          </button>
-        ))}
-      </div>
-
-      {dsLoc.length === 0 && (
-        <div className="rounded-lg border border-dashed border-gray-300 bg-white p-8 text-center text-sm text-gray-400">
-          {ds.length === 0
-            ? "Thư viện chưa có sản phẩm nào — bấm “＋ Thêm sản phẩm” để bắt đầu."
-            : "Không có sản phẩm nào khớp từ khóa."}
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {dsLoc.map((sp) => (
+            <button
+              key={sp.MaSanPham}
+              onClick={() => setModal({ mode: "sua", sp })}
+              className="overflow-hidden rounded-lg border border-gray-200 bg-white text-left shadow-sm transition hover:border-brand hover:shadow"
+            >
+              <AnhSanPham sp={sp} />
+              <div className="space-y-0.5 p-2.5">
+                <p className="font-mono text-sm font-bold text-gray-900">
+                  {sp.MaSanPham}
+                </p>
+                <p className="line-clamp-2 text-sm text-gray-700">
+                  {sp.TenSanPham}
+                </p>
+                {sp.KhachHang && (
+                  <p className="truncate text-xs text-gray-500">
+                    {sp.KhachHang}
+                  </p>
+                )}
+              </div>
+            </button>
+          ))}
         </div>
-      )}
+
+        {dsLoc.length === 0 && (
+          <div className="mt-3 rounded-lg border border-dashed border-gray-300 bg-white p-8 text-center text-sm text-gray-400">
+            {ds.length === 0
+              ? "Thư viện chưa có sản phẩm nào — bấm “＋ Thêm sản phẩm” để bắt đầu."
+              : "Không có sản phẩm nào khớp từ khóa."}
+          </div>
+        )}
+      </div>
 
       {modal && (
         <SanPhamModal

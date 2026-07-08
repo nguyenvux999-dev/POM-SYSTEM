@@ -37,7 +37,8 @@ export default async function TienDoLenhPage({
       const latest =
         cua.length > 0
           ? cua.reduce((a, b) =>
-              parseLocal(b.ThoiGian).getTime() >= parseLocal(a.ThoiGian).getTime()
+              parseLocal(b.ThoiGian).getTime() >=
+              parseLocal(a.ThoiGian).getTime()
                 ? b
                 : a,
             )
@@ -54,7 +55,7 @@ export default async function TienDoLenhPage({
     });
 
   return (
-    <div className="space-y-4">
+    <div className="h-full space-y-4 overflow-y-auto">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="leading-tight">

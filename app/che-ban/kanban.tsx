@@ -58,14 +58,15 @@ export function Kanban({ cards: initial }: { cards: TheLenh[] }) {
   }
 
   return (
-    <div>
+    // Khung kanban: dải cột cuộn NGANG; mỗi cột cao theo khung và cuộn DỌC riêng.
+    <div className="flex h-full min-h-0 flex-col">
       {error && (
-        <div className="mb-3 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-700">
+        <div className="mb-3 shrink-0 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-700">
           {error}
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="flex min-h-0 flex-1 gap-3 overflow-x-auto pb-1">
         {TRANG_THAI_FILE.map((col) => {
           const colCards = cards.filter((c) => c.TrangThaiFile === col);
           return (
@@ -79,9 +80,9 @@ export function Kanban({ cards: initial }: { cards: TheLenh[] }) {
                 if (dragId) move(dragId, col);
                 setDragId(null);
               }}
-              className="flex min-h-[8rem] flex-col rounded-lg border border-gray-200 bg-gray-50"
+              className="flex w-[17rem] shrink-0 flex-col rounded-lg border border-gray-200 bg-gray-50 sm:w-72 lg:w-auto lg:min-w-0 lg:flex-1 lg:shrink"
             >
-              <div className="flex items-center justify-between border-b border-gray-200 px-3 py-2">
+              <div className="flex shrink-0 items-center justify-between border-b border-gray-200 px-3 py-2">
                 <span className="text-sm font-semibold text-gray-700">
                   {NHAN_TRANG_THAI_FILE[col]}
                 </span>
@@ -90,7 +91,7 @@ export function Kanban({ cards: initial }: { cards: TheLenh[] }) {
                 </span>
               </div>
 
-              <div className="flex flex-1 flex-col gap-2 p-2">
+              <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-2">
                 {colCards.map((c) => (
                   <div
                     key={c.MaLenh}
@@ -160,9 +161,9 @@ export function Kanban({ cards: initial }: { cards: TheLenh[] }) {
         })}
       </div>
 
-      <p className="mt-3 text-xs text-gray-400">
+      <p className="mt-2 shrink-0 text-xs text-gray-400">
         Mẹo: kéo-thả thẻ giữa các cột (desktop) hoặc dùng ô chọn trạng thái trên
-        mỗi thẻ (mobile).
+        mỗi thẻ (mobile). Vuốt ngang để xem thêm cột.
       </p>
     </div>
   );

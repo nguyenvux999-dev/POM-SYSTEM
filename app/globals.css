@@ -15,7 +15,25 @@ body {
   @apply bg-gray-50 text-gray-900 antialiased;
 }
 
-/* In / xuất PDF: ẩn điều hướng & các nút, nền trắng, bỏ padding thừa. */
+/*
+ * Khung app cao đúng 1 màn hình. Dùng 100dvh (đúng trên mobile khi thanh địa
+ * chỉ ẩn/hiện); khai báo 100vh trước làm fallback cho Safari iOS cũ chưa hiểu dvh.
+ */
+.app-shell {
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* Cuộn mượt trên cảm ứng cho mọi vùng cuộn nội bộ. */
+.overflow-y-auto,
+.overflow-x-auto,
+.overflow-auto {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* In / xuất PDF: ẩn điều hướng & các nút, nền trắng, bỏ padding thừa.
+ * Khung cố định + vùng cuộn nội bộ phải trải phẳng ra giấy: bỏ giới hạn
+ * chiều cao và cho overflow hiện hết. */
 @media print {
   header,
   .no-print {
@@ -23,9 +41,22 @@ body {
   }
   body {
     background: #fff !important;
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  .app-shell {
+    height: auto !important;
   }
   main {
     max-width: none !important;
     padding: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  main * {
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
   }
 }

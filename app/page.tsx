@@ -16,7 +16,7 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="h-full space-y-8 overflow-y-auto">
       <section>
         <h1 className="text-xl font-semibold">Trang điều hành</h1>
         <p className="mt-1 text-sm text-gray-500">Chọn khu vực để bắt đầu.</p>
@@ -45,7 +45,9 @@ export default async function HomePage() {
         {error ? (
           <div className="mt-3 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
             <p className="font-medium">Chưa đọc được dữ liệu.</p>
-            <p className="mt-1 whitespace-pre-wrap font-mono text-xs">{error}</p>
+            <p className="mt-1 whitespace-pre-wrap font-mono text-xs">
+              {error}
+            </p>
             <p className="mt-2 text-xs text-red-600">
               Vui lòng liên hệ quản trị hệ thống.
             </p>

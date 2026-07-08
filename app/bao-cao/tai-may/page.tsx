@@ -48,8 +48,9 @@ export default async function TaiMayPage({
   ];
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    // Tiêu đề + chọn tuần cố định; danh sách tải máy là vùng cuộn.
+    <div className="flex h-full min-h-0 flex-col gap-4">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
         <div>
           <Link href="/bao-cao" className="text-sm text-brand hover:underline">
             ← Báo cáo
@@ -59,12 +60,17 @@ export default async function TaiMayPage({
             {tuFrom} → {toTo}
           </p>
         </div>
-        <ExportButtons fileName={`tai-may-${tuFrom}_${toTo}.xlsx`} sheets={excelSheets} />
+        <ExportButtons
+          fileName={`tai-may-${tuFrom}_${toTo}.xlsx`}
+          sheets={excelSheets}
+        />
       </div>
 
-      <DateRange from={tuFrom} to={toTo} homNay={homNay} mode="week" />
+      <div className="shrink-0">
+        <DateRange from={tuFrom} to={toTo} homNay={homNay} mode="week" />
+      </div>
 
-      <section className="rounded-lg border border-gray-200 bg-white p-4">
+      <section className="min-h-0 overflow-y-auto rounded-lg border border-gray-200 bg-white p-4">
         <div className="space-y-3">
           {items.map((m) => {
             const pct = Math.round(m.tai * 100);
@@ -87,7 +93,11 @@ export default async function TaiMayPage({
                       </span>
                     )}
                   </span>
-                  <span className={m.nghen ? "font-semibold text-red-600" : "text-gray-600"}>
+                  <span
+                    className={
+                      m.nghen ? "font-semibold text-red-600" : "text-gray-600"
+                    }
+                  >
                     {pct}%
                   </span>
                 </div>
@@ -108,8 +118,8 @@ export default async function TaiMayPage({
         </div>
         {items.length > 0 && (
           <p className="mt-4 text-xs text-gray-400">
-            Máy tải cao nhất: <strong>{Math.round(maxTai * 100)}%</strong> — ngưỡng
-            nghẽn 85%. % tải tính theo giờ làm việc trong khoảng đã chọn.
+            Máy tải cao nhất: <strong>{Math.round(maxTai * 100)}%</strong> —
+            ngưỡng nghẽn 85%. % tải tính theo giờ làm việc trong khoảng đã chọn.
           </p>
         )}
       </section>

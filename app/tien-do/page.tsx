@@ -12,14 +12,13 @@ import { MaLenhHienThi } from "@/components/lenh-specs";
 
 export const dynamic = "force-dynamic";
 
-function moiNhatCongDoan(
-  logs: TienDo[],
-  congDoan: string,
-): TienDo | undefined {
+function moiNhatCongDoan(logs: TienDo[], congDoan: string): TienDo | undefined {
   const ds = logs.filter((t) => t.CongDoan === congDoan);
   if (ds.length === 0) return undefined;
   return ds.reduce((a, b) =>
-    parseLocal(b.ThoiGian).getTime() >= parseLocal(a.ThoiGian).getTime() ? b : a,
+    parseLocal(b.ThoiGian).getTime() >= parseLocal(a.ThoiGian).getTime()
+      ? b
+      : a,
   );
 }
 
@@ -87,8 +86,9 @@ export default async function TienDoPage() {
   const soTre = dangChay.filter((x) => x.tre).length;
 
   return (
-    <div className="space-y-4">
-      <div>
+    // Tiêu đề + thẻ thống kê cố định; danh sách lệnh là vùng cuộn.
+    <div className="flex h-full min-h-0 flex-col gap-4">
+      <div className="shrink-0">
         <h1 className="text-xl font-semibold">Tiến độ sản xuất</h1>
         <p className="text-sm text-gray-500">
           Các lệnh đang trong sản xuất. Chạm một lệnh để cập nhật nhanh ngoài
@@ -96,7 +96,7 @@ export default async function TienDoPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className="grid shrink-0 grid-cols-2 gap-3 sm:grid-cols-3">
         <div className="rounded-lg border border-gray-200 bg-white p-3">
           <div className="text-2xl font-semibold text-gray-900">
             {dangChay.length}
@@ -125,7 +125,7 @@ export default async function TienDoPage() {
         </div>
       </div>
 
-      <div className="space-y-2">
+      <div className="min-h-0 space-y-2 overflow-y-auto">
         {dangChay.map((x) => (
           <Link
             key={x.MaLenh}
@@ -165,7 +165,8 @@ export default async function TienDoPage() {
             <p className="mt-1 text-xs text-gray-500">
               {x.current ? (
                 <>
-                  Hiện tại: <strong>{NHAN_CONG_DOAN[x.current.CongDoan]}</strong>
+                  Hiện tại:{" "}
+                  <strong>{NHAN_CONG_DOAN[x.current.CongDoan]}</strong>
                   {x.latest
                     ? ` · đạt ${x.latest.SoLuongDat.toLocaleString()}/${x.SoToIn.toLocaleString()}`
                     : " · chưa bắt đầu"}

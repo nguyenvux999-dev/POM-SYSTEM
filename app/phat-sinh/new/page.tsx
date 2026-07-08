@@ -43,7 +43,7 @@ export default async function NewPhatSinhPage({
   }));
 
   return (
-    <div className="space-y-4">
+    <div className="h-full space-y-4 overflow-y-auto">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Ghi phát sinh</h1>
         <Link href="/phat-sinh" className="text-sm text-brand hover:underline">

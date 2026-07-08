@@ -31,15 +31,18 @@ export default async function CheBanPage() {
   });
 
   return (
-    <div className="space-y-4">
-      <div>
+    // Tiêu đề cố định; kanban chiếm phần còn lại và tự quản lý cuộn theo cột.
+    <div className="flex h-full min-h-0 flex-col gap-4">
+      <div className="shrink-0">
         <h1 className="text-xl font-semibold">Chế bản</h1>
         <p className="text-sm text-gray-500">
           Cập nhật trạng thái file của từng lệnh. Lệnh ở cột{" "}
           <strong>Sẵn sàng</strong> mới được đưa vào xếp lịch.
         </p>
       </div>
-      <Kanban cards={cards} />
+      <div className="min-h-0 flex-1">
+        <Kanban cards={cards} />
+      </div>
     </div>
   );
 }

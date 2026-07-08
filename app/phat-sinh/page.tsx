@@ -4,16 +4,9 @@ import { donHangRepository } from "@/lib/repositories/donHang";
 import { lichChayRepository } from "@/lib/repositories/lichChay";
 import { mayRepository } from "@/lib/repositories/may";
 import { phatSinhRepository } from "@/lib/repositories/phatSinh";
-import {
-  danhSachCanXepLai,
-  danhSachNguyCoTre,
-} from "@/lib/domain/reschedule";
+import { danhSachCanXepLai, danhSachNguyCoTre } from "@/lib/domain/reschedule";
 import { formatLocal, nowLocal, todayVN } from "@/lib/domain/datetime";
-import {
-  PhatSinhBoard,
-  type CanXepLaiVM,
-  type PhatSinhVM,
-} from "./board";
+import { PhatSinhBoard, type CanXepLaiVM, type PhatSinhVM } from "./board";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +24,9 @@ export default async function PhatSinhPage() {
 
   const phatSinh: PhatSinhVM[] = phatSinhAll
     .slice()
-    .sort((a, b) => (a.ThoiGian < b.ThoiGian ? 1 : a.ThoiGian > b.ThoiGian ? -1 : 0))
+    .sort((a, b) =>
+      a.ThoiGian < b.ThoiGian ? 1 : a.ThoiGian > b.ThoiGian ? -1 : 0,
+    )
     .map((p) => {
       const lenh = lenhMap.get(p.MaLenh);
       const d = lenh ? donMap.get(lenh.MaDon) : undefined;
@@ -87,8 +82,9 @@ export default async function PhatSinhPage() {
   });
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
+    // Tiêu đề cố định; board tự quản lý vùng cuộn dữ liệu bên trong.
+    <div className="flex h-full min-h-0 flex-col gap-4">
+      <div className="flex shrink-0 items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold">Phát sinh & Cần xử lý</h1>
           <p className="text-sm text-gray-500">
@@ -103,14 +99,16 @@ export default async function PhatSinhPage() {
         </Link>
       </div>
 
-      <PhatSinhBoard
-        phatSinh={phatSinh}
-        canXepLai={canXepLai}
-        nguyCoTre={nguyCoTre}
-        may={mayList}
-        lichAll={lichAll}
-        now={formatLocal(nowLocal())}
-      />
+      <div className="min-h-0 flex-1">
+        <PhatSinhBoard
+          phatSinh={phatSinh}
+          canXepLai={canXepLai}
+          nguyCoTre={nguyCoTre}
+          may={mayList}
+          lichAll={lichAll}
+          now={formatLocal(nowLocal())}
+        />
+      </div>
     </div>
   );
 }

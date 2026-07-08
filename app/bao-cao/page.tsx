@@ -31,7 +31,7 @@ const REPORTS = [
 
 export default function BaoCaoPage() {
   return (
-    <div className="space-y-4">
+    <div className="h-full space-y-4 overflow-y-auto">
       <div>
         <h1 className="text-xl font-semibold">Báo cáo</h1>
         <p className="text-sm text-gray-500">

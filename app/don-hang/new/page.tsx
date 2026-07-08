@@ -14,7 +14,7 @@ export default async function NewOrderPage() {
   const homNay = todayVN();
 
   return (
-    <div className="space-y-4">
+    <div className="h-full space-y-4 overflow-y-auto">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Tạo đơn hàng</h1>
         <Link href="/don-hang" className="text-sm text-brand hover:underline">
