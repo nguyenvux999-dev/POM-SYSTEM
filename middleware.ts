@@ -8,8 +8,14 @@ export { auth as middleware } from "@/lib/auth/config";
 
 export const config = {
   /**
-   * Bỏ qua: route auth nội bộ, static của Next, favicon và mọi file có đuôi
-   * (ảnh, css, js...). Còn lại đều đi qua middleware.
+   * Bỏ qua: route auth nội bộ, static của Next, favicon, các đường PWA
+   * (sw.js, manifest, icon — nếu bị chặn thì KHÔNG cài được PWA) và mọi file
+   * có đuôi (ảnh, css, js...). Còn lại đều đi qua middleware.
+   *
+   * Lưu ý: `.*\\.` đã loại trừ mọi path chứa dấu chấm, nhưng vẫn liệt kê
+   * tường minh các đường PWA để không vô tình chặn nếu sau này sửa matcher.
    */
-  matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico|.*\\.).*)"],
+  matcher: [
+    "/((?!api/auth|_next|favicon.ico|sw.js|manifest.webmanifest|icons/|apple-icon|icon|logo-source|.*\\.).*)",
+  ],
 };
